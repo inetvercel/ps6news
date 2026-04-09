@@ -21,32 +21,35 @@ export default function Sidebar() {
 
   return (
     <div className="space-y-6 sticky top-24">
-      <div className="bg-white border border-ps-border rounded-xl p-5 shadow-sm">
-        <h3 className="text-lg font-display font-bold text-gray-900 mb-4 flex items-center space-x-2">
-          <Tag className="h-5 w-5 text-ps-blue" />
+      {/* Categories */}
+      <div className="bg-[#111827] border border-[#1F2937] rounded-xl p-5">
+        <h3 className="text-sm font-bold text-[#3BA3FF] uppercase tracking-widest mb-4 flex items-center gap-2">
+          <Tag className="h-4 w-4" />
           <span>Categories</span>
         </h3>
-        <ul className="space-y-2">
+        <ul className="space-y-1">
           {categories.map((category, index) => (
             <li key={index}>
-              <Link href={`/category/${category.slug}`} className="text-sm text-gray-700 hover:text-ps-blue transition-colors flex items-center justify-between group">
+              <Link href={`/category/${category.slug}`} className="flex items-center justify-between py-2 px-3 rounded-lg text-sm text-[#9CA3AF] hover:text-white hover:bg-[#1F2937] transition-all group">
                 <span>{category.name}</span>
-                <span className="text-xs text-gray-400 group-hover:text-ps-blue">→</span>
+                <span className="text-[#4B5563] group-hover:text-[#3BA3FF] transition-colors">→</span>
               </Link>
             </li>
           ))}
         </ul>
       </div>
 
-      <div className="bg-white border border-ps-border rounded-xl p-5 shadow-sm">
-        <h3 className="text-lg font-display font-bold text-gray-900 mb-4 flex items-center space-x-2">
-          <TrendingUp className="h-5 w-5 text-ps-blue" />
+      {/* Popular Posts */}
+      <div className="bg-[#111827] border border-[#1F2937] rounded-xl p-5">
+        <h3 className="text-sm font-bold text-[#3BA3FF] uppercase tracking-widest mb-4 flex items-center gap-2">
+          <TrendingUp className="h-4 w-4" />
           <span>Popular Posts</span>
         </h3>
         <ul className="space-y-3">
           {popularPosts.map((post, index) => (
-            <li key={index}>
-              <a href="#" className="text-sm text-gray-700 hover:text-ps-blue transition-colors line-clamp-2">
+            <li key={index} className="flex items-start gap-3">
+              <span className="text-xs font-bold text-[#0070D1] mt-0.5 shrink-0 w-4">{index + 1}</span>
+              <a href="#" className="text-sm text-[#9CA3AF] hover:text-white transition-colors line-clamp-2 leading-snug">
                 {post}
               </a>
             </li>
@@ -54,15 +57,19 @@ export default function Sidebar() {
         </ul>
       </div>
 
-      <div className="bg-ps-blue text-white rounded-xl p-5 shadow-lg">
-        <h3 className="text-lg font-display font-bold mb-3">Newsletter</h3>
-        <p className="text-sm text-blue-100 mb-4">Get the latest PS6 news in your inbox</p>
+      {/* Newsletter */}
+      <div className="bg-[#111827] border border-[#1F2937] rounded-xl p-5" style={{boxShadow:'0 0 30px rgba(0,112,209,0.10)'}}>
+        <div className="flex items-center gap-2 mb-1">
+          <div className="w-2 h-2 rounded-full bg-[#3BA3FF]" style={{boxShadow:'0 0 8px rgba(59,163,255,0.8)'}} />
+          <h3 className="text-sm font-bold text-[#3BA3FF] uppercase tracking-widest">Stay Updated</h3>
+        </div>
+        <p className="text-sm text-[#9CA3AF] mb-4 mt-2">Get the latest PS6 news in your inbox</p>
         <input 
           type="email" 
           placeholder="Your email"
-          className="w-full px-4 py-2 rounded-md text-gray-900 mb-3 focus:outline-none focus:ring-2 focus:ring-blue-300"
+          className="w-full px-4 py-2.5 rounded-lg bg-[#0B0F1A] border border-[#1F2937] text-white placeholder-[#4B5563] mb-3 focus:outline-none focus:border-[#3BA3FF] focus:ring-1 focus:ring-[#3BA3FF]/30 transition-all"
         />
-        <button className="w-full bg-white text-ps-blue font-semibold py-2 rounded-md hover:bg-gray-100 transition-colors">
+        <button className="w-full bg-[#0070D1] hover:bg-[#0060BB] text-white font-bold py-2.5 rounded-lg transition-colors" style={{boxShadow:'0 0 16px rgba(59,163,255,0.3)'}}>
           Subscribe
         </button>
       </div>

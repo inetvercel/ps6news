@@ -8,12 +8,13 @@ module.exports = {
     extend: {
       colors: {
         ps: {
-          blue: '#0070d1',
-          darkblue: '#003087',
-          lightblue: '#0099ff',
-          gray: '#f5f5f5',
-          darkgray: '#333333',
-          border: '#e5e5e5',
+          blue: '#0070D1',
+          accent: '#3BA3FF',
+          darkblue: '#004EA8',
+          bg: '#0B0F1A',
+          card: '#111827',
+          border: '#1F2937',
+          muted: '#9CA3AF',
         }
       },
       fontFamily: {

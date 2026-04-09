@@ -23,15 +23,15 @@ export default function SidebarTrending({ trendingPosts, guidePosts }: SidebarTr
   const posts = activeTab === 'trending' ? trendingPosts : guidePosts
 
   return (
-    <div className="bg-white rounded-lg p-5">
+    <div className="bg-[#111827] border border-[#1F2937] rounded-lg p-5">
       {/* Tabs */}
-      <div className="flex items-center gap-6 mb-4 border-b border-gray-100 pb-3">
+      <div className="flex items-center gap-6 mb-4 border-b border-[#1F2937] pb-3">
         <button
           onClick={() => setActiveTab('trending')}
           className={`text-xs font-bold uppercase tracking-wide transition-colors pb-2 -mb-[13px] ${
             activeTab === 'trending'
-              ? 'text-slate-900 border-b-2 border-blue-600'
-              : 'text-slate-400 hover:text-slate-600'
+              ? 'text-white border-b-2 border-[#3BA3FF]'
+              : 'text-[#6B7280] hover:text-[#9CA3AF]'
           }`}
         >
           Trending
@@ -40,8 +40,8 @@ export default function SidebarTrending({ trendingPosts, guidePosts }: SidebarTr
           onClick={() => setActiveTab('guides')}
           className={`text-xs font-bold uppercase tracking-wide transition-colors pb-2 -mb-[13px] ${
             activeTab === 'guides'
-              ? 'text-blue-600 border-b-2 border-blue-600'
-              : 'text-slate-400 hover:text-slate-600'
+              ? 'text-white border-b-2 border-[#3BA3FF]'
+              : 'text-[#6B7280] hover:text-[#9CA3AF]'
           }`}
         >
           How-To Guides
@@ -67,15 +67,15 @@ export default function SidebarTrending({ trendingPosts, guidePosts }: SidebarTr
                 />
               </div>
             ) : (
-              <div className="w-[65px] h-[65px] shrink-0 rounded bg-slate-100 flex items-center justify-center">
-                <Newspaper className="w-5 h-5 text-slate-300" />
+              <div className="w-[65px] h-[65px] shrink-0 rounded bg-[#1F2937] flex items-center justify-center">
+                <Newspaper className="w-5 h-5 text-[#4B5563]" />
               </div>
             )}
             <div>
-              <h4 className="font-semibold text-sm text-slate-800 group-hover:text-[#0066cc] transition-colors line-clamp-2 leading-snug">
+              <h4 className="font-semibold text-sm text-white group-hover:text-[#3BA3FF] transition-colors line-clamp-2 leading-snug">
                 {post.title}
               </h4>
-              <span className="text-[11px] text-slate-400 mt-1 block">
+              <span className="text-[11px] text-[#6B7280] mt-1 block">
                 {activeTab === 'trending' ? `Trending #${index + 1}` : `Guide #${index + 1}`}
               </span>
             </div>

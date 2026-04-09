@@ -232,22 +232,22 @@ export default async function ArticlePage({params}: {params: {slug: string}}) {
             )}
 
             {/* Title */}
-            <h1 className="text-[32px] md:text-[40px] lg:text-[48px] font-black text-gray-900 leading-[1.1] px-6 pt-4 pb-2 tracking-tight">
+            <h1 className="text-[32px] md:text-[40px] lg:text-[48px] font-black text-white leading-[1.1] px-6 pt-4 pb-2 tracking-tight">
               {article.title}
             </h1>
 
             {/* Share Row */}
             <div className="flex flex-wrap items-center justify-between px-6 pb-5">
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-500">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-[#9CA3AF]">
                 {article.author && (
                   <>
                     <span>by</span>
-                    <span className="font-semibold text-slate-700">{article.author.name}</span>
+                    <span className="font-semibold text-[#D1D5DB]">{article.author.name}</span>
                   </>
                 )}
                 {article.publishedAt && (
                   <>
-                    <span className="text-slate-300">·</span>
+                    <span className="text-[#4B5563]">·</span>
                     <time className="flex items-center gap-1">
                       <Calendar className="w-3.5 h-3.5" />
                       {new Date(article.publishedAt).toLocaleDateString('en-US', {
@@ -260,15 +260,15 @@ export default async function ArticlePage({params}: {params: {slug: string}}) {
                 )}
               </div>
               {/* Share Buttons */}
-              <div className="flex items-center gap-1 text-sm text-slate-400">
+              <div className="flex items-center gap-1 text-sm text-[#6B7280]">
                 <span className="mr-1">Share:</span>
-                <a href={`https://twitter.com/intent/tweet?url=https://ps6news.com/articles/${article.slug.current}&text=${encodeURIComponent(article.title)}`} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg hover:bg-gray-100 hover:text-slate-600 transition-colors">
+                <a href={`https://twitter.com/intent/tweet?url=https://ps6news.com/articles/${article.slug.current}&text=${encodeURIComponent(article.title)}`} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg hover:bg-[#1F2937] hover:text-white transition-colors">
                   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
                 </a>
-                <button className="p-2 rounded-lg hover:bg-gray-100 hover:text-slate-600 transition-colors" title="Copy link">
+                <button className="p-2 rounded-lg hover:bg-[#1F2937] hover:text-white transition-colors" title="Copy link">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
                 </button>
-                <button className="p-2 rounded-lg hover:bg-gray-100 hover:text-slate-600 transition-colors" title="Share">
+                <button className="p-2 rounded-lg hover:bg-[#1F2937] hover:text-white transition-colors" title="Share">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><line x1="8.59" y1="13.51" x2="15.42" y2="17.49" /><line x1="15.41" y1="6.51" x2="8.59" y2="10.49" /></svg>
                 </button>
               </div>
@@ -314,13 +314,13 @@ export default async function ArticlePage({params}: {params: {slug: string}}) {
               />
 
               {/* CTA */}
-              <div className="bg-slate-900 rounded-lg p-5 text-white">
+              <div className="bg-[#111827] border border-[#1F2937] rounded-lg p-5" style={{boxShadow:'0 0 20px rgba(0,112,209,0.08)'}}>
                 <div className="flex items-center gap-2 mb-2">
                   <span>🎮</span>
-                  <span className="text-sm font-bold text-blue-400">Need a PSN Name?</span>
+                  <span className="text-sm font-bold text-[#3BA3FF]">Need a PSN Name?</span>
                 </div>
-                <p className="text-xs text-slate-400 mb-3">Generate unique PlayStation usernames instantly with our free tool.</p>
-                <button className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 rounded-lg text-sm transition-colors">
+                <p className="text-xs text-[#9CA3AF] mb-3">Generate unique PlayStation usernames instantly with our free tool.</p>
+                <button className="w-full bg-[#0070D1] hover:bg-[#0060BB] text-white font-bold py-2.5 rounded-lg text-sm transition-colors" style={{boxShadow:'0 0 14px rgba(59,163,255,0.3)'}}>
                   Try Generator
                 </button>
               </div>

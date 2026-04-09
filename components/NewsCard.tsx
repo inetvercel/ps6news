@@ -32,7 +32,7 @@ export default function NewsCard({article}: NewsCardProps) {
   })
 
   return (
-    <article className="bg-white rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300 group">
+    <article className="bg-[#111827] border border-[#1F2937] rounded-2xl overflow-hidden hover:border-[#3BA3FF]/30 transition-all duration-300 group" style={{boxShadow:'0 4px 24px rgba(0,0,0,0.4)'}}>
       <div className="flex flex-col md:flex-row">
         {/* Content - Left Side */}
         <div className="flex-1 p-6 md:p-8 flex flex-col">
@@ -40,7 +40,7 @@ export default function NewsCard({article}: NewsCardProps) {
             <div className="mb-3">
               <Link 
                 href={`/category/${article.category.toLowerCase().replace(/\s+&\s+/g, '-').replace(/\s+/g, '-')}`}
-                className="inline-block px-3 py-1 bg-ps-blue hover:bg-ps-darkblue text-white text-xs font-bold rounded-md uppercase tracking-wide transition-colors"
+                className="inline-block px-3 py-1 bg-[#0070D1]/20 hover:bg-[#0070D1]/40 text-[#3BA3FF] text-xs font-bold rounded-md uppercase tracking-wide transition-colors border border-[#0070D1]/30"
               >
                 {article.category}
               </Link>
@@ -48,23 +48,23 @@ export default function NewsCard({article}: NewsCardProps) {
           )}
           
           <Link href={`/articles/${article.slug.current}`}>
-            <h3 className="text-2xl md:text-3xl font-display font-bold text-gray-900 mb-4 group-hover:text-ps-blue transition-colors line-clamp-3 leading-tight">
+            <h3 className="text-2xl md:text-3xl font-display font-bold text-white mb-4 group-hover:text-[#3BA3FF] transition-colors line-clamp-3 leading-tight">
               {article.title}
             </h3>
           </Link>
           
-          <p className="text-base text-gray-600 mb-6 line-clamp-3 leading-relaxed flex-grow">
+          <p className="text-base text-[#9CA3AF] mb-6 line-clamp-3 leading-relaxed flex-grow">
             {article.excerpt}
           </p>
           
-          <div className="flex items-center justify-between text-sm text-gray-500 pt-4 border-t border-gray-100">
+          <div className="flex items-center justify-between text-sm text-[#6B7280] pt-4 border-t border-[#1F2937]">
             <div className="flex items-center space-x-1 font-medium">
               <Calendar className="h-4 w-4" />
               <time dateTime={article.publishedAt}>{formattedDate}</time>
             </div>
             <Link 
               href={`/articles/${article.slug.current}`}
-              className="flex items-center space-x-1 text-ps-blue font-semibold hover:underline"
+              className="flex items-center space-x-1 text-[#3BA3FF] font-semibold hover:text-white transition-colors"
             >
               <span>Read More</span>
               <span>→</span>

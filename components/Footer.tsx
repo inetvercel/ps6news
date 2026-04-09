@@ -16,13 +16,13 @@ const legalLinks = [
 
 export default function Footer() {
   return (
-    <footer className="bg-[#0f172a] border-t border-slate-800">
+    <footer className="bg-[#0B0F1A] border-t border-[#1F2937]">
       <div className="container mx-auto max-w-[1350px] px-4 py-10">
         {/* Top section */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-8 mb-8">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
-            <Gamepad2 className="h-6 w-6 text-blue-400" />
+            <Gamepad2 className="h-6 w-6 text-[#3BA3FF]" />
             <span className="text-xl font-bold text-white">PS6 News</span>
           </Link>
 
@@ -32,7 +32,7 @@ export default function Footer() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="text-gray-400 text-sm font-medium hover:text-blue-400 transition-colors"
+                className="text-[#9CA3AF] text-sm font-medium hover:text-[#3BA3FF] transition-colors"
               >
                 {link.label}
               </Link>
@@ -45,7 +45,7 @@ export default function Footer() {
               href="https://x.com/ps6news" 
               target="_blank" 
               rel="noopener noreferrer" 
-              className="p-2 rounded-lg text-gray-400 hover:text-blue-400 hover:bg-slate-800 transition-all" 
+              className="p-2 rounded-lg text-[#9CA3AF] hover:text-[#3BA3FF] hover:bg-[#1F2937] transition-all" 
               aria-label="X (Twitter)"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
@@ -56,7 +56,7 @@ export default function Footer() {
               href="https://www.facebook.com/ps6news" 
               target="_blank" 
               rel="noopener noreferrer" 
-              className="p-2 rounded-lg text-gray-400 hover:text-blue-400 hover:bg-slate-800 transition-all" 
+              className="p-2 rounded-lg text-[#9CA3AF] hover:text-[#3BA3FF] hover:bg-[#1F2937] transition-all" 
               aria-label="Facebook"
             >
               <Facebook className="w-5 h-5" />
@@ -65,24 +65,24 @@ export default function Footer() {
         </div>
 
         {/* Divider */}
-        <div className="border-t border-slate-700 mb-6" />
+        <div className="border-t border-[#1F2937] mb-6" />
 
         {/* Affiliate Disclosure */}
-        <div className="border-t border-slate-800 pt-6 mb-4 text-center text-xs text-gray-500 leading-relaxed">
-          <span className="font-semibold text-gray-400">Affiliate Disclosure: </span>
+        <div className="border-t border-[#1F2937] pt-6 mb-4 text-center text-xs text-[#4B5563] leading-relaxed">
+          <span className="font-semibold text-[#6B7280]">Affiliate Disclosure: </span>
           PS6 News is a participant in the Amazon Associates Programme, an affiliate advertising programme designed to provide a means for sites to earn advertising fees by advertising and linking to Amazon. As an Amazon Associate we earn from qualifying purchases at no extra cost to you.
         </div>
 
         {/* Bottom Row */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-gray-400">
-          <p>&copy; {new Date().getFullYear()} PS6 News. All rights reserved.</p>
+          <p className="text-[#6B7280]">&copy; {new Date().getFullYear()} PS6 News. All rights reserved.</p>
 
           <nav className="flex items-center gap-6">
             {legalLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="hover:text-blue-400 transition-colors"
+                className="text-[#9CA3AF] hover:text-[#3BA3FF] transition-colors"
               >
                 {link.label}
               </Link>

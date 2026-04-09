@@ -78,12 +78,12 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50">
       {/* Main header bar */}
-      <div className="bg-white border-b border-slate-200">
+      <div className="bg-[#0B0F1A] border-b border-[#1F2937]" style={{boxShadow:'0 1px 0 rgba(59,163,255,0.08)'}}>
         <div className="container mx-auto max-w-[1350px] flex items-center justify-between h-16 px-4">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group shrink-0">
-            <Gamepad2 className="h-6 w-6 text-blue-600" />
-            <span className="text-xl font-bold text-gray-900">PS6 News</span>
+            <Gamepad2 className="h-6 w-6 text-[#3BA3FF]" />
+            <span className="text-xl font-bold text-white">PS6 News</span>
           </Link>
 
           {/* Desktop Nav - Centered */}
@@ -93,9 +93,9 @@ export default function Header() {
                 key={item.href}
                 href={item.href}
                 className={`flex items-center gap-2 px-3 py-1.5 text-sm font-semibold rounded-lg transition-all duration-200 ${
-                  isActive(item.href) 
-                    ? "bg-blue-600 text-white shadow-sm" 
-                    : "text-gray-700 hover:bg-gray-100"
+                  isActive(item.href)
+                    ? 'bg-[#0070D1] text-white shadow-[0_0_14px_rgba(59,163,255,0.4)]'
+                    : 'text-[#9CA3AF] hover:text-white hover:bg-[#1F2937]'
                 }`}
               >
                 <item.icon className="h-[18px] w-[18px]" />
@@ -114,8 +114,8 @@ export default function Header() {
               }}
               className={`p-2 rounded-lg transition-colors ${
                 searchOpen
-                  ? 'bg-gray-100 text-blue-600'
-                  : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50'
+                  ? 'bg-[#1F2937] text-[#3BA3FF]'
+                  : 'text-[#9CA3AF] hover:text-[#3BA3FF] hover:bg-[#1F2937]'
               }`}
             >
               {searchOpen ? <X className="h-5 w-5" /> : <Search className="h-5 w-5" />}
@@ -124,7 +124,7 @@ export default function Header() {
             {/* Mobile Menu Toggle */}
             <button 
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded-lg transition-colors"
+              className="lg:hidden p-2 text-[#9CA3AF] hover:text-[#3BA3FF] hover:bg-[#1F2937] rounded-lg transition-colors"
             >
               <Menu className="h-5 w-5" />
             </button>
@@ -134,7 +134,7 @@ export default function Header() {
 
       {/* Search Bar - Slide down */}
       <div className={`transition-all duration-300 ${searchOpen ? 'max-h-[500px] overflow-visible' : 'max-h-0 overflow-hidden'}`}>
-        <div className="bg-gray-50 border-b border-gray-200 py-3">
+        <div className="bg-[#0D1120] border-b border-[#1F2937] py-3">
           <div className="container mx-auto max-w-[1350px] px-4">
             <div ref={searchContainerRef} className="relative max-w-2xl mx-auto">
               <input
@@ -143,22 +143,22 @@ export default function Header() {
                 placeholder="Search articles, news, guides..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-4 py-2.5 pl-11 pr-10 bg-white border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                className="w-full px-4 py-2.5 pl-11 pr-10 bg-[#111827] border border-[#1F2937] rounded-lg text-white placeholder-[#4B5563] focus:outline-none focus:border-[#3BA3FF] focus:ring-2 focus:ring-[#3BA3FF]/20 transition-all"
               />
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-[#4B5563]" />
               {isSearching && (
                 <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-blue-500 animate-spin" />
               )}
 
               {/* Search Results Dropdown */}
               {searchQuery.length >= 2 && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden z-50">
+                <div className="absolute top-full left-0 right-0 mt-2 bg-[#111827] border border-[#1F2937] rounded-xl shadow-xl overflow-hidden z-50" style={{boxShadow:'0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(59,163,255,0.1)'}}>
                   {isSearching ? (
                     <div className="flex items-center justify-center py-8">
                       <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
                     </div>
                   ) : searchResults.length === 0 ? (
-                    <div className="py-8 text-center text-gray-500">
+                    <div className="py-8 text-center text-[#6B7280]">
                       No results found for &ldquo;{searchQuery}&rdquo;
                     </div>
                   ) : (
@@ -169,16 +169,16 @@ export default function Header() {
                           <Link
                             key={result._id}
                             href={href}
-                            className="flex items-center gap-3 p-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0"
+                            className="flex items-center gap-3 p-3 hover:bg-[#1F2937] transition-colors border-b border-[#1F2937] last:border-b-0"
                           >
-                            <div className="shrink-0 w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                              <Newspaper className="w-4 h-4 text-blue-500" />
+                            <div className="shrink-0 w-10 h-10 rounded-lg bg-[#0070D1]/20 flex items-center justify-center">
+                              <Newspaper className="w-4 h-4 text-[#3BA3FF]" />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h4 className="font-semibold text-gray-900 line-clamp-1 text-sm">
+                              <h4 className="font-semibold text-white line-clamp-1 text-sm">
                                 {result.title}
                               </h4>
-                              <p className="text-xs text-gray-500 capitalize">
+                              <p className="text-xs text-[#6B7280] capitalize">
                                 Article
                               </p>
                             </div>
@@ -196,7 +196,7 @@ export default function Header() {
 
       {/* Mobile Menu Dropdown */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-white border-b border-gray-200">
+        <div className="lg:hidden bg-[#0B0F1A] border-b border-[#1F2937]">
           <nav className="container mx-auto max-w-[1350px] px-4 py-2 flex flex-col gap-1">
             {navItems.map((item) => (
               <Link
@@ -204,9 +204,9 @@ export default function Header() {
                 href={item.href}
                 onClick={() => setMobileMenuOpen(false)}
                 className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                  isActive(item.href) 
-                    ? "bg-blue-50 text-blue-600" 
-                    : "text-gray-700 hover:text-blue-600 hover:bg-gray-50"
+                  isActive(item.href)
+                    ? 'bg-[#0070D1]/20 text-[#3BA3FF]'
+                    : 'text-[#9CA3AF] hover:text-white hover:bg-[#1F2937]'
                 }`}
               >
                 <item.icon className="h-5 w-5" />
