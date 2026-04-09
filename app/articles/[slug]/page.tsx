@@ -12,6 +12,7 @@ import Footer from '@/components/Footer'
 import {Calendar} from 'lucide-react'
 import SidebarTrending from '@/components/SidebarTrending'
 import ArticlePoll from '@/components/ArticlePoll'
+import ArticleEngagementBar from '@/components/ArticleEngagementBar'
 
 export const revalidate = 60
 
@@ -137,9 +138,9 @@ export default async function ArticlePage({params}: {params: {slug: string}}) {
     {next: {revalidate: 3600}}
   )
 
-  // Fetch guide/how-to posts for sidebar
-  const guidePosts = await client.fetch(
-    `*[_type == "article" && (title match "how to*" || title match "How To*" || title match "guide*" || title match "Guide*")] | order(publishedAt desc)[0...20] {
+  // Fetch rumour/leak posts for sidebar
+  const rumourPosts = await client.fetch(
+    `*[_type == "article" && category->slug.current == "rumors-leaks"] | order(publishedAt desc)[0...20] {
       _id,
       title,
       slug,
@@ -197,24 +198,11 @@ export default async function ArticlePage({params}: {params: {slug: string}}) {
 
           {/* Left Engagement Bar - Sticky */}
           <aside className="hidden lg:block">
-            <div className="sticky top-24 flex flex-col items-center gap-4">
-              <button className="flex flex-col items-center gap-1 text-slate-400 hover:text-blue-400 transition-colors" title="Helpful">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" /></svg>
-                <span className="text-[10px]">Helpful</span>
-              </button>
-              <button className="flex flex-col items-center gap-1 text-slate-400 hover:text-blue-400 transition-colors" title="Comments">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
-                <span className="text-[10px]">Comments</span>
-              </button>
-              <button className="flex flex-col items-center gap-1 text-slate-400 hover:text-blue-400 transition-colors" title="Save">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" /></svg>
-                <span className="text-[10px]">Save</span>
-              </button>
-              <button className="flex flex-col items-center gap-1 text-slate-400 hover:text-blue-400 transition-colors" title="Tip">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 2L15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26z" /></svg>
-                <span className="text-[10px]">Tip</span>
-              </button>
-            </div>
+            <ArticleEngagementBar
+              articleId={article._id}
+              articleTitle={article.title}
+              articleSlug={article.slug.current}
+            />
           </aside>
 
           {/* Main Content */}
@@ -303,7 +291,7 @@ export default async function ArticlePage({params}: {params: {slug: string}}) {
               {/* Trending / How-To Guides - Tabbed */}
               <SidebarTrending
                 trendingPosts={trendingPosts}
-                guidePosts={guidePosts}
+                rumourPosts={rumourPosts}
               />
 
               {/* Quick Poll - AI Generated */}

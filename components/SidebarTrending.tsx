@@ -14,13 +14,13 @@ interface Post {
 
 interface SidebarTrendingProps {
   trendingPosts: Post[]
-  guidePosts: Post[]
+  rumourPosts: Post[]
 }
 
-export default function SidebarTrending({ trendingPosts, guidePosts }: SidebarTrendingProps) {
-  const [activeTab, setActiveTab] = useState<'trending' | 'guides'>('trending')
+export default function SidebarTrending({ trendingPosts, rumourPosts }: SidebarTrendingProps) {
+  const [activeTab, setActiveTab] = useState<'trending' | 'rumours'>('trending')
 
-  const posts = activeTab === 'trending' ? trendingPosts : guidePosts
+  const posts = activeTab === 'trending' ? trendingPosts : rumourPosts
 
   return (
     <div className="bg-[#111827] border border-[#1F2937] rounded-lg p-5">
@@ -37,14 +37,14 @@ export default function SidebarTrending({ trendingPosts, guidePosts }: SidebarTr
           Trending
         </button>
         <button
-          onClick={() => setActiveTab('guides')}
+          onClick={() => setActiveTab('rumours')}
           className={`text-xs font-bold uppercase tracking-wide transition-colors pb-2 -mb-[13px] ${
-            activeTab === 'guides'
+            activeTab === 'rumours'
               ? 'text-white border-b-2 border-[#3BA3FF]'
               : 'text-[#6B7280] hover:text-[#9CA3AF]'
           }`}
         >
-          How-To Guides
+          Rumours
         </button>
       </div>
 
@@ -76,19 +76,23 @@ export default function SidebarTrending({ trendingPosts, guidePosts }: SidebarTr
                 {post.title}
               </h4>
               <span className="text-[11px] text-[#6B7280] mt-1 block">
-                {activeTab === 'trending' ? `Trending #${index + 1}` : `Guide #${index + 1}`}
+                {activeTab === 'trending' ? `Trending #${index + 1}` : `Rumour #${index + 1}`}
               </span>
             </div>
           </Link>
         ))}
+        {posts.length === 0 && (
+          <p className="text-[#6B7280] text-xs text-center py-4">No {activeTab === 'rumours' ? 'rumours' : 'articles'} found.</p>
+        )}
       </div>
 
       {/* View All Button */}
       <Link
-        href="/"
-        className="mt-4 block text-center text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 py-2.5 rounded-lg transition-colors"
+        href={activeTab === 'rumours' ? '/category/rumors-leaks' : '/'}
+        className="mt-4 block text-center text-sm font-semibold text-white bg-[#0070D1] hover:bg-[#0060BB] py-2.5 rounded-lg transition-colors"
+        style={{boxShadow:'0 0 14px rgba(59,163,255,0.25)'}}
       >
-        View All {activeTab === 'trending' ? 'Articles' : 'Guides'}
+        View All {activeTab === 'trending' ? 'Articles' : 'Rumours'}
       </Link>
     </div>
   )
