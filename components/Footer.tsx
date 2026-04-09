@@ -1,0 +1,95 @@
+import Link from 'next/link'
+import {Gamepad2, Facebook} from 'lucide-react'
+
+const navLinks = [
+  { href: "/", label: "Home" },
+  { href: "/category/news", label: "News" },
+  { href: "/category/rumors-leaks", label: "Rumors" },
+  { href: "/category/games-exclusives", label: "Games" },
+]
+
+const legalLinks = [
+  { href: "/about", label: "About" },
+  { href: "/contact", label: "Contact" },
+  { href: "/privacy", label: "Privacy" },
+]
+
+export default function Footer() {
+  return (
+    <footer className="bg-[#0f172a] border-t border-slate-800">
+      <div className="container mx-auto max-w-[1350px] px-4 py-10">
+        {/* Top section */}
+        <div className="flex flex-col md:flex-row items-center justify-between gap-8 mb-8">
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-2">
+            <Gamepad2 className="h-6 w-6 text-blue-400" />
+            <span className="text-xl font-bold text-white">PS6 News</span>
+          </Link>
+
+          {/* Navigation Links */}
+          <nav className="flex flex-wrap items-center justify-center gap-6">
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="text-gray-400 text-sm font-medium hover:text-blue-400 transition-colors"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+
+          {/* Social Icons */}
+          <div className="flex items-center gap-2">
+            <a 
+              href="https://x.com/ps6news" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="p-2 rounded-lg text-gray-400 hover:text-blue-400 hover:bg-slate-800 transition-all" 
+              aria-label="X (Twitter)"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+              </svg>
+            </a>
+            <a 
+              href="https://www.facebook.com/ps6news" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="p-2 rounded-lg text-gray-400 hover:text-blue-400 hover:bg-slate-800 transition-all" 
+              aria-label="Facebook"
+            >
+              <Facebook className="w-5 h-5" />
+            </a>
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div className="border-t border-slate-700 mb-6" />
+
+        {/* Affiliate Disclosure */}
+        <div className="border-t border-slate-800 pt-6 mb-4 text-center text-xs text-gray-500 leading-relaxed">
+          <span className="font-semibold text-gray-400">Affiliate Disclosure: </span>
+          PS6 News is a participant in the Amazon Associates Programme, an affiliate advertising programme designed to provide a means for sites to earn advertising fees by advertising and linking to Amazon. As an Amazon Associate we earn from qualifying purchases at no extra cost to you.
+        </div>
+
+        {/* Bottom Row */}
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-gray-400">
+          <p>&copy; {new Date().getFullYear()} PS6 News. All rights reserved.</p>
+
+          <nav className="flex items-center gap-6">
+            {legalLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="hover:text-blue-400 transition-colors"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
+      </div>
+    </footer>
+  )
+}
