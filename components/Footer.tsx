@@ -67,10 +67,9 @@ export default function Footer() {
         {/* Divider */}
         <div className="border-t border-[#1F2937] mb-6" />
 
-        {/* Affiliate Disclosure */}
-        <div className="border-t border-[#1F2937] pt-6 mb-4 text-center text-xs text-[#4B5563] leading-relaxed">
-          <span className="font-semibold text-[#6B7280]">Affiliate Disclosure: </span>
-          PS6 News is a participant in the Amazon Associates Programme, an affiliate advertising programme designed to provide a means for sites to earn advertising fees by advertising and linking to Amazon. As an Amazon Associate we earn from qualifying purchases at no extra cost to you.
+        {/* Disclosure */}
+        <div className="mb-4 text-center text-xs text-[#4B5563] leading-relaxed">
+          <span className="font-semibold text-[#6B7280]">Disclaimer: </span>Independent fan site, not affiliated with Sony or PlayStation. We may earn commission from Amazon links.
         </div>
 
         {/* Bottom Row */}

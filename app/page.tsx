@@ -75,7 +75,7 @@ export default async function Home() {
             <h1 className="text-5xl md:text-6xl font-black text-white mb-6">
               PS6 News
             </h1>
-            <p className="text-xl text-slate-300 leading-relaxed mb-10 max-w-2xl mx-auto">
+            <p className="text-lg text-slate-300 mb-10 whitespace-nowrap">
               News, rumors, specs, and everything you need for PlayStation 6, all in one place.
             </p>
           </div>
@@ -102,7 +102,7 @@ export default async function Home() {
               {/* Main Featured - Large Left */}
               <Link
                 href={`/articles/${articles[0].slug.current}`}
-                className="group col-span-12 md:col-span-7 row-span-2 bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all flex flex-col"
+                className="group col-span-12 md:col-span-7 row-span-2 bg-[#111827] border border-[#1F2937] rounded-2xl overflow-hidden hover:border-[#3BA3FF]/30 transition-all flex flex-col"
               >
                 <div className="flex-1 relative min-h-[280px]">
                   {articles[0].mainImage?.asset?.url ? (
@@ -113,8 +113,8 @@ export default async function Home() {
                       className="object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-slate-100">
-                      <Newspaper className="w-16 h-16 text-slate-300" />
+                    <div className="w-full h-full flex items-center justify-center bg-[#1F2937]">
+                      <Newspaper className="w-16 h-16 text-[#374151]" />
                     </div>
                   )}
                 </div>
@@ -135,9 +135,9 @@ export default async function Home() {
                 <Link
                   key={article._id}
                   href={`/articles/${article.slug.current}`}
-                  className="group col-span-12 md:col-span-5 bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all flex flex-col"
+                  className="group col-span-12 md:col-span-5 bg-[#111827] border border-[#1F2937] rounded-xl overflow-hidden hover:border-[#3BA3FF]/30 transition-all flex flex-col"
                 >
-                  <div className="aspect-video relative">
+                  <div className="relative w-full h-44">
                     {article.mainImage?.asset?.url ? (
                       <Image
                         src={article.mainImage.asset.url}
@@ -146,8 +146,8 @@ export default async function Home() {
                         className="object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-slate-100">
-                        <Newspaper className="w-10 h-10 text-slate-300" />
+                      <div className="w-full h-full flex items-center justify-center bg-[#1F2937]">
+                        <Newspaper className="w-10 h-10 text-[#374151]" />
                       </div>
                     )}
                   </div>
@@ -169,9 +169,9 @@ export default async function Home() {
                 <Link
                   key={article._id}
                   href={`/articles/${article.slug.current}`}
-                  className="group col-span-12 md:col-span-4 bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all"
+                  className="group col-span-12 md:col-span-4 bg-[#111827] border border-[#1F2937] rounded-xl overflow-hidden hover:border-[#3BA3FF]/30 transition-all"
                 >
-                  <div className="aspect-4/3 relative">
+                  <div className="relative w-full h-40">
                     {article.mainImage?.asset?.url ? (
                       <Image
                         src={article.mainImage.asset.url}
@@ -180,8 +180,8 @@ export default async function Home() {
                         className="object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-slate-100">
-                        <Newspaper className="w-8 h-8 text-slate-300" />
+                      <div className="w-full h-full flex items-center justify-center bg-[#1F2937]">
+                        <Newspaper className="w-8 h-8 text-[#374151]" />
                       </div>
                     )}
                   </div>
