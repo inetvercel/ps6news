@@ -6,7 +6,7 @@ const navLinks = [
   { href: "/", label: "Home" },
   { href: "/category/news", label: "News" },
   { href: "/category/rumors-leaks", label: "Rumors" },
-  { href: "/category/games-exclusives", label: "Games" },
+  { href: "/category/games", label: "Games" },
 ]
 
 const legalLinks = [
