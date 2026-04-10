@@ -4,6 +4,7 @@ import {useState, useEffect, useRef} from 'react'
 import {usePathname} from 'next/navigation'
 import {Menu, Gamepad2, Newspaper, TrendingUp, Search, X, Loader2, Megaphone} from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 
 const navItems = [
   { href: "/category/announcements", label: "Announcements", icon: Megaphone },
@@ -81,9 +82,15 @@ export default function Header() {
       <div className="bg-[#0B0F1A] border-b border-[#1F2937]" style={{boxShadow:'0 1px 0 rgba(59,163,255,0.08)'}}>
         <div className="container mx-auto max-w-[1350px] flex items-center justify-between h-16 px-4">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 group shrink-0">
-            <Gamepad2 className="h-6 w-6 text-[#3BA3FF]" />
-            <span className="text-xl font-bold text-white">PS6 News</span>
+          <Link href="/" className="flex items-center shrink-0">
+            <Image
+              src="https://cdn.sanity.io/images/zzzwo1aw/production/5746ab3938ea01ef12a809d319ef335048f021b7-1255x195.png"
+              alt="PS6 News"
+              width={160}
+              height={25}
+              className="object-contain"
+              priority
+            />
           </Link>
 
           {/* Desktop Nav - Centered */}

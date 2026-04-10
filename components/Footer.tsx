@@ -1,5 +1,6 @@
 import Link from 'next/link'
-import {Gamepad2, Facebook} from 'lucide-react'
+import Image from 'next/image'
+import {Facebook} from 'lucide-react'
 
 const navLinks = [
   { href: "/", label: "Home" },
@@ -21,9 +22,14 @@ export default function Footer() {
         {/* Top section */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-8 mb-8">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
-            <Gamepad2 className="h-6 w-6 text-[#3BA3FF]" />
-            <span className="text-xl font-bold text-white">PS6 News</span>
+          <Link href="/" className="flex items-center">
+            <Image
+              src="https://cdn.sanity.io/images/zzzwo1aw/production/5746ab3938ea01ef12a809d319ef335048f021b7-1255x195.png"
+              alt="PS6 News"
+              width={140}
+              height={22}
+              className="object-contain"
+            />
           </Link>
 
           {/* Navigation Links */}

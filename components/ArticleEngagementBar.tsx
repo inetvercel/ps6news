@@ -17,6 +17,17 @@ export default function ArticleEngagementBar({ articleId, articleTitle, articleS
   const [copied, setCopied] = useState(false)
   const [progress, setProgress] = useState(0)
 
+  // Track view on mount
+  useEffect(() => {
+    try {
+      const views: Record<string, number> = JSON.parse(localStorage.getItem('articleViews') || '{}')
+      views[articleId] = (views[articleId] || 0) + 1
+      localStorage.setItem('articleViews', JSON.stringify(views))
+      // Notify other tabs/components
+      window.dispatchEvent(new Event('storage'))
+    } catch {}
+  }, [articleId])
+
   useEffect(() => {
     function onScroll() {
       const el = document.querySelector('article')

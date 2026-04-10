@@ -9,6 +9,10 @@ import Footer from '@/components/Footer'
 import Link from 'next/link'
 import Image from 'next/image'
 import {Newspaper, TrendingUp, Sparkles, ChevronRight} from 'lucide-react'
+import dynamic from 'next/dynamic'
+const TrendingWidgets = dynamic(() => import('@/components/TrendingWidgets'), { ssr: false })
+const HotTopics = dynamic(() => import('@/components/HotTopics'), { ssr: false })
+const PS6Tracker = dynamic(() => import('@/components/PS6Tracker'), { ssr: false })
 
 export const revalidate = 60
 
@@ -72,12 +76,26 @@ export default async function Home() {
               <Sparkles className="w-4 h-4" />
               Your Ultimate PS6 Resource
             </div>
-            <h1 className="text-5xl md:text-6xl font-black text-white mb-6">
-              PS6 News
+            <h1 className="mb-6 flex justify-center">
+              <Image
+                src="https://cdn.sanity.io/images/zzzwo1aw/production/5746ab3938ea01ef12a809d319ef335048f021b7-1255x195.png"
+                alt="PS6 News"
+                width={500}
+                height={78}
+                className="object-contain"
+                priority
+              />
             </h1>
-            <p className="text-lg text-slate-300 mb-10 whitespace-nowrap">
+            <p className="text-lg text-slate-300 mb-8 whitespace-nowrap">
               News, rumors, specs, and everything you need for PlayStation 6, all in one place.
             </p>
+
+            {/* Hot Search Topics */}
+            <HotTopics />
+
+            {/* PS6 Tracker */}
+            <PS6Tracker />
+
           </div>
         </div>
       </section>
@@ -90,7 +108,7 @@ export default async function Home() {
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-black text-white flex items-center gap-2">
                 <TrendingUp className="w-6 h-6 text-blue-400" />
-                Latest Articles
+                Latest News
               </h2>
               <Link href="/blog" className="text-sm font-semibold text-blue-400 hover:text-blue-300 flex items-center gap-1">
                 View All <span>→</span>
@@ -204,6 +222,9 @@ export default async function Home() {
           {/* Sidebar */}
           <aside className="hidden lg:block">
             <div className="space-y-6">
+            {/* Trending + Most Read Widgets */}
+            <TrendingWidgets articles={articles} />
+
             {/* Categories Widget */}
             <div className="bg-[#111827] border border-[#1F2937] rounded-2xl p-6">
               <h3 className="text-sm font-bold text-[#3BA3FF] uppercase tracking-widest mb-4">Categories</h3>
