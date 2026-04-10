@@ -42,19 +42,21 @@ function TableRenderer({html}: {html: string}) {
 
 function KeyTakeaways({ items }: { items: string[] }) {
   return (
-    <div className="my-8 rounded-2xl border border-[#3BA3FF]/30 bg-[#0070D1]/10 p-6" style={{boxShadow:'0 0 24px rgba(59,163,255,0.1)'}}>
-      <div className="flex items-center gap-2 mb-4">
-        <span className="text-xl">📌</span>
-        <h3 className="text-base font-black text-white tracking-wide uppercase" style={{letterSpacing:'0.08em'}}>Key Takeaways</h3>
+    <div className="my-5 rounded-xl border border-[#1F2937] bg-[#111827]/60 px-4 py-3">
+      <div className="flex items-center gap-1.5 mb-2.5">
+        <span className="text-xs">📌</span>
+        <span className="text-[10px] font-black text-[#3BA3FF] uppercase tracking-widest">Key Takeaways</span>
       </div>
-      <ul className="space-y-3">
-        {items.map((item, i) => (
-          <li key={i} className="flex items-start gap-3 text-sm text-[#CBD5E1] leading-relaxed">
-            <span className="mt-1 w-5 h-5 shrink-0 rounded-full bg-[#0070D1] flex items-center justify-center text-[10px] font-black text-white">{i + 1}</span>
-            <span>{item}</span>
-          </li>
+      <div className="space-y-1.5">
+        {items.slice(0, 4).map((item, i) => (
+          <div key={i} className="flex items-start gap-2.5">
+            <span className="mt-0.5 w-3.5 h-3.5 shrink-0 rounded-full bg-[#1F2937] border border-[#3BA3FF]/40 flex items-center justify-center text-[8px] font-black text-[#3BA3FF]">
+              {i + 1}
+            </span>
+            <span className="text-xs text-[#9CA3AF] leading-relaxed">{item}</span>
+          </div>
         ))}
-      </ul>
+      </div>
     </div>
   )
 }

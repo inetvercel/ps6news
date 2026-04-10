@@ -25,6 +25,7 @@ export const articleBySlugQuery = groq`*[_type == "article" && slug.current == $
   excerpt,
   body,
   publishedAt,
+  updatedAt,
   featured,
   author->{
     name,

@@ -108,6 +108,12 @@ export default defineType({
       description: 'Show this article in featured sections'
     }),
     defineField({
+      name: 'updatedAt',
+      title: 'Last Updated',
+      type: 'datetime',
+      description: 'When this article was last updated — shown to readers instead of published date'
+    }),
+    defineField({
       name: 'wordpressId',
       title: 'WordPress ID',
       type: 'number',

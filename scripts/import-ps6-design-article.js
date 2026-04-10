@@ -58,7 +58,12 @@ const TRENDHUNTER   = 'https://www.trendhunter.com/trends/playstation-6-console-
 // ─── Article body ──────────────────────────────────────────────────────────
 const body = [
 
-  // ── Key Takeaways ─────────────────────────────────────────────────────────
+  // ── Intro ─────────────────────────────────────────────────────────────────
+  heading('Rising Curiosity About Sony\'s Next Console', 2),
+  block('The PS6 may still be a few years away, but curiosity around Sony\'s next-generation console is already driving huge search volumes. Phrases like "PS6 release date" (around 65,000 monthly searches) and "PlayStation 6 release date" (about 30,000) reflect how eager players are for news on the system\'s launch. With the PS5 now in the middle of its lifecycle, this article summarises the most credible information available as of April 2026 — highlighting when the new machine might arrive, what it could look like, and what hardware may lie inside.'),
+  block('Note: All details below are based on leaks and analyst reports. Sony has not formally unveiled the PlayStation 6, and many aspects could change before its eventual release.'),
+
+  // ── Key Takeaways — after intro ───────────────────────────────────────────
   {
     _type: 'keyTakeaways',
     _key: key(),
@@ -71,11 +76,6 @@ const body = [
       'Patents for a "buttonless" touch-capacitive DualSense controller have surfaced, though patents don\'t always translate to final products.',
     ]
   },
-
-  // ── Intro ─────────────────────────────────────────────────────────────────
-  heading('Rising Curiosity About Sony\'s Next Console', 2),
-  block('The PS6 may still be a few years away, but curiosity around Sony\'s next-generation console is already driving huge search volumes. Phrases like "PS6 release date" (around 65,000 monthly searches) and "PlayStation 6 release date" (about 30,000) reflect how eager players are for news on the system\'s launch. With the PS5 now in the middle of its lifecycle, this article summarises the most credible information available as of April 2026 — highlighting when the new machine might arrive, what it could look like, and what hardware may lie inside.'),
-  block('Note: All details below are based on leaks and analyst reports. Sony has not formally unveiled the PlayStation 6, and many aspects could change before its eventual release.'),
 
   // ── Release window ────────────────────────────────────────────────────────
   heading('Release Window: Patience Required', 2),
@@ -141,7 +141,7 @@ const body = [
 async function run() {
   // Find the article by slug
   const article = await client.fetch(
-    `*[_type == "article" && slug.current == "ps6-design-concept-predictions"][0]{ _id, title, slug }`
+    `*[_type == "article" && slug.current == "what-will-the-ps6-look-like"][0]{ _id, title, slug }`
   )
 
   if (!article) {

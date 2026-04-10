@@ -23,6 +23,7 @@ interface Article {
   excerpt: string
   body: any[]
   publishedAt: string
+  updatedAt?: string
   author?: {
     name: string
     image?: any
@@ -233,16 +234,31 @@ export default async function ArticlePage({params}: {params: {slug: string}}) {
                     <span className="font-semibold text-[#D1D5DB]">{article.author.name}</span>
                   </>
                 )}
-                {article.publishedAt && (
+                {(article.updatedAt || article.publishedAt) && (
                   <>
                     <span className="text-[#4B5563]">·</span>
-                    <time className="flex items-center gap-1">
+                    {/* Hidden machine-readable published date for SEO */}
+                    {article.publishedAt && (
+                      <time dateTime={article.publishedAt} className="hidden" />
+                    )}
+                    {/* Visible: Updated date (falls back to published) */}
+                    <time
+                      dateTime={article.updatedAt || article.publishedAt}
+                      className="flex items-center gap-1 text-[#9CA3AF]"
+                    >
                       <Calendar className="w-3.5 h-3.5" />
-                      {new Date(article.publishedAt).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric'
-                      })}
+                      {article.updatedAt ? (
+                        <>
+                          <span className="text-[#6B7280] text-xs">Updated</span>
+                          {new Date(article.updatedAt).toLocaleDateString('en-US', {
+                            month: 'short', day: 'numeric', year: 'numeric'
+                          })}
+                        </>
+                      ) : (
+                        new Date(article.publishedAt).toLocaleDateString('en-US', {
+                          month: 'short', day: 'numeric', year: 'numeric'
+                        })
+                      )}
                     </time>
                   </>
                 )}
