@@ -81,7 +81,7 @@ const body = [
   heading('Release Window: Patience Required', 2),
   blockWithLinks([
     { text: 'Historically, Sony has followed a seven-year cadence for its home consoles: PlayStation 3 in 2006, PS4 in 2013 and PS5 in late 2020. By that measure, many expected the PS6 around holiday 2027. However, in February 2026, ' },
-    { text: 'Bloomberg sources reported that Sony was considering pushing the next PlayStation back to 2028 or even 2029', href: WCCF_DELAY },
+    { text: 'a potential delay to 2028 or even 2029', href: WCCF_DELAY },
     { text: ', blaming a global shortage of high-performance memory chips that has driven up RAM prices — a situation analysts have dubbed "RAMmageddon."' },
   ]),
   block('Sony\'s own executives have reinforced this cautious stance. During the company\'s Q2 fiscal 2026 earnings call, CFO Lin Tao told investors that the PS5 is only in the middle of its life cycle. PlayStation system architect Mark Cerny added that many next-generation technologies — neural-array upscalers, radiance cores for ray tracing and universal compression — currently exist only in simulation, and that he was excited to bring them to a future console "in a few years time."'),
@@ -104,7 +104,7 @@ const body = [
   heading('Digital-First with a Detachable Disc Drive', 2),
   blockWithLinks([
     { text: 'Leakers suggest the PS6 will ship without a built-in disc drive, relying on neural texture compression to reduce game sizes. To appease physical media fans, ' },
-    { text: 'Tom Henderson at Insider Gaming reports that Sony plans to offer a detachable disc drive that can be bundled or purchased separately', href: INSIDER_DISC },
+    { text: 'a detachable disc drive available separately', href: INSIDER_DISC },
     { text: '. The decision reportedly stems from a desire to reduce manufacturing and shipping costs while maximising space efficiency.' },
   ]),
 

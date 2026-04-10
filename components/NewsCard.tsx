@@ -47,7 +47,7 @@ export default function NewsCard({article}: NewsCardProps) {
             </div>
           )}
           
-          <Link href={`/articles/${article.slug.current}`}>
+          <Link href={`/${article.slug.current}`}>
             <h3 className="text-2xl md:text-3xl font-display font-bold text-white mb-4 group-hover:text-[#3BA3FF] transition-colors line-clamp-3 leading-tight">
               {article.title}
             </h3>
@@ -63,7 +63,7 @@ export default function NewsCard({article}: NewsCardProps) {
               <time dateTime={article.publishedAt}>{formattedDate}</time>
             </div>
             <Link 
-              href={`/articles/${article.slug.current}`}
+              href={`/${article.slug.current}`}
               className="flex items-center space-x-1 text-[#3BA3FF] font-semibold hover:text-white transition-colors"
             >
               <span>Read More</span>
@@ -73,7 +73,7 @@ export default function NewsCard({article}: NewsCardProps) {
         </div>
 
         {/* Image - Right Side */}
-        <Link href={`/articles/${article.slug.current}`} className="md:w-80 lg:w-96 flex-shrink-0">
+        <Link href={`/${article.slug.current}`} className="md:w-80 lg:w-96 flex-shrink-0">
           <div className="relative w-full h-64 md:h-full overflow-hidden bg-gray-100">
             <Image 
               src={imageUrl} 

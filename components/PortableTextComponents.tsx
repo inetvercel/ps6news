@@ -69,6 +69,38 @@ export const portableTextComponents: PortableTextComponents = {
     keyTakeaways: ({value}: any) => {
       return <KeyTakeaways items={value?.items || []} />
     },
+    table: ({value}: any) => {
+      const rows: {cells: string[]}[] = value?.rows || []
+      if (!rows.length) return null
+      const [headerRow, ...bodyRows] = rows
+      return (
+        <div className="not-prose my-8 rounded-xl overflow-hidden" style={{border:'1px solid rgba(59,163,255,0.18)', boxShadow:'0 0 30px rgba(0,112,209,0.12), 0 2px 8px rgba(0,0,0,0.5)'}}>
+          <table className="w-full text-sm text-left" style={{borderCollapse:'collapse', margin:0}}>
+            {headerRow && (
+              <thead>
+                <tr style={{background:'linear-gradient(90deg,#0058a8 0%,#0070D1 50%,#0ea5e9 100%)'}}>
+                  {headerRow.cells.map((cell: string, i: number) => (
+                    <th key={i} style={{padding:'12px 20px', fontWeight:700, color:'#fff', fontSize:'11px', letterSpacing:'0.08em', textTransform:'uppercase', whiteSpace:'nowrap', borderBottom:'1px solid rgba(255,255,255,0.1)'}}>{cell}</th>
+                  ))}
+                </tr>
+              </thead>
+            )}
+            <tbody>
+              {bodyRows.map((row, i) => (
+                <tr
+                  key={i}
+                  className={`transition-colors duration-150 hover:bg-[#162032] ${i % 2 === 0 ? 'bg-[#0B0F1A]' : 'bg-[#0f1623]'}`}
+                >
+                  {row.cells.map((cell: string, j: number) => (
+                    <td key={j} style={{padding:'11px 20px', color: j === 0 ? '#E2E8F0' : '#94A3B8', borderTop:'1px solid rgba(31,41,55,0.8)'}}>{cell}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )
+    },
   },
   marks: {
     link: ({children, value}: any) => {

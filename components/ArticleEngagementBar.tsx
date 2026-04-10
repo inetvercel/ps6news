@@ -86,7 +86,7 @@ export default function ArticleEngagementBar({ articleId, articleTitle, articleS
   }
 
   async function handleShare() {
-    const url = `https://ps6news.com/articles/${articleSlug}`
+    const url = `https://ps6news.com/${articleSlug}`
     if (navigator.share) {
       try {
         await navigator.share({ title: articleTitle, url })
@@ -176,7 +176,7 @@ export default function ArticleEngagementBar({ articleId, articleTitle, articleS
 
       {/* X share shortcut */}
       <a
-        href={`https://twitter.com/intent/tweet?url=https://ps6news.com/articles/${articleSlug}&text=${encodeURIComponent(articleTitle)}`}
+        href={`https://x.com/intent/post?url=https://ps6news.com/${articleSlug}&text=${encodeURIComponent(articleTitle)}`}
         target="_blank"
         rel="noopener noreferrer"
         title="Share on X"

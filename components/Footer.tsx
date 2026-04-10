@@ -48,7 +48,7 @@ export default function Footer() {
           {/* Social Icons */}
           <div className="flex items-center gap-2">
             <a 
-              href="https://x.com/ps6news" 
+              href="https://x.com/AllAboutPS6" 
               target="_blank" 
               rel="noopener noreferrer" 
               className="p-2 rounded-lg text-[#9CA3AF] hover:text-[#3BA3FF] hover:bg-[#1F2937] transition-all" 

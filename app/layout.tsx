@@ -1,5 +1,6 @@
 import type {Metadata} from 'next'
 import {Inter} from 'next/font/google'
+import Script from 'next/script'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' })
@@ -50,6 +51,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
+    site: '@AllAboutPS6',
+    creator: '@AllAboutPS6',
     title: 'PS6News.com - Latest PlayStation 6 News & Updates',
     description: 'Your ultimate source for PlayStation 6 news, rumors, specs, and release date information.',
     images: ['/og-image.jpg'],
@@ -65,8 +68,16 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
+  icons: {
+    icon: 'https://cdn.sanity.io/images/zzzwo1aw/production/72c1e3e33ce0b42ca24edb13289449384ec66e63-1024x1024.png',
+    shortcut: 'https://cdn.sanity.io/images/zzzwo1aw/production/72c1e3e33ce0b42ca24edb13289449384ec66e63-1024x1024.png',
+    apple: 'https://cdn.sanity.io/images/zzzwo1aw/production/72c1e3e33ce0b42ca24edb13289449384ec66e63-1024x1024.png',
+  },
   verification: {
     google: 'your-google-verification-code',
+  },
+  other: {
+    'google-analytics': 'G-K0LH2MR3HX',
   },
 }
 
@@ -75,12 +86,45 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  const orgSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'NewsMediaOrganization',
+    name: 'PS6News.com',
+    url: 'https://ps6news.com',
+    logo: {
+      '@type': 'ImageObject',
+      url: 'https://cdn.sanity.io/images/zzzwo1aw/production/72c1e3e33ce0b42ca24edb13289449384ec66e63-1024x1024.png',
+    },
+    sameAs: [
+      'https://x.com/AllAboutPS6',
+    ],
+    description: 'Your ultimate source for PlayStation 6 news, rumors, specs, and release date information.',
+  }
+
   return (
     <html lang="en">
       <head>
         <link rel="canonical" href="https://ps6news.com" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        {/* Google Analytics GA4 */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-K0LH2MR3HX"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-K0LH2MR3HX', { page_path: window.location.pathname });
+          `}
+        </Script>
+        {/* Organization Schema */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{__html: JSON.stringify(orgSchema)}}
+        />
       </head>
       <body className={`${inter.variable} font-sans antialiased min-h-screen flex flex-col site-content`}>
         <main className="flex-1">{children}</main>

@@ -12,9 +12,11 @@
     "import:wordpress": "node scripts/import-wordpress.js"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@portabletext/react": "^6.0.3",
     "@sanity/client": "^6.4.12",
     "@sanity/image-url": "^1.0.2",
+    "@sanity/table": "^2.0.1",
     "@sanity/vision": "^3.19.0",
     "axios": "^1.5.0",
     "lucide-react": "^0.263.1",
@@ -25,6 +27,7 @@
     "react-dom": "^18.2.0",
     "sanity": "^3.19.0",
     "sanity-plugin-media": "^4.1.1",
+    "sanity-plugin-table": "^2.3.0",
     "server-only": "^0.0.1",
     "styled-components": "^6.4.0"
   },

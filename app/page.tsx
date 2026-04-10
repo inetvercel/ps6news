@@ -119,7 +119,7 @@ export default async function Home() {
               <div className="grid grid-cols-12 gap-4 md:gap-6 auto-rows-fr">
               {/* Main Featured - Large Left */}
               <Link
-                href={`/articles/${articles[0].slug.current}`}
+                href={`/${articles[0].slug.current}`}
                 className="group col-span-12 md:col-span-7 row-span-2 bg-[#111827] border border-[#1F2937] rounded-2xl overflow-hidden hover:border-[#3BA3FF]/30 transition-all flex flex-col"
               >
                 <div className="flex-1 relative min-h-[280px]">
@@ -152,7 +152,7 @@ export default async function Home() {
               {articles.slice(1, 3).map((article) => (
                 <Link
                   key={article._id}
-                  href={`/articles/${article.slug.current}`}
+                  href={`/${article.slug.current}`}
                   className="group col-span-12 md:col-span-5 bg-[#111827] border border-[#1F2937] rounded-xl overflow-hidden hover:border-[#3BA3FF]/30 transition-all flex flex-col"
                 >
                   <div className="relative w-full h-44">
@@ -186,7 +186,7 @@ export default async function Home() {
               {articles.slice(3, 6).map((article) => (
                 <Link
                   key={article._id}
-                  href={`/articles/${article.slug.current}`}
+                  href={`/${article.slug.current}`}
                   className="group col-span-12 md:col-span-4 bg-[#111827] border border-[#1F2937] rounded-xl overflow-hidden hover:border-[#3BA3FF]/30 transition-all"
                 >
                   <div className="relative w-full h-40">

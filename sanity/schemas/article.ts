@@ -81,23 +81,10 @@ export default defineType({
           ]
         },
         {
-          type: 'object',
-          name: 'keyTakeaways',
-          title: 'Key Takeaways',
-          fields: [
-            {
-              name: 'items',
-              title: 'Takeaway Points',
-              type: 'array',
-              of: [{ type: 'string' }]
-            }
-          ],
-          preview: {
-            select: { items: 'items' },
-            prepare({ items }: { items: string[] }) {
-              return { title: '📌 Key Takeaways', subtitle: items?.slice(0,2).join(' · ') }
-            }
-          }
+          type: 'keyTakeaways'
+        },
+        {
+          type: 'table'
         }
       ]
     }),

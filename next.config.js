@@ -12,6 +12,16 @@ const nextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      // Redirect old /articles/slug to /slug (permanent 301 for SEO)
+      {
+        source: '/articles/:slug',
+        destination: '/:slug',
+        permanent: true,
+      },
+    ]
+  },
 }
 
 module.exports = nextConfig

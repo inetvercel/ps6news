@@ -104,7 +104,7 @@ export default async function CategoryPage({params}: {params: {slug: string}}) {
                 {/* Featured first article */}
                 {featured && (
                   <Link
-                    href={`/articles/${featured.slug.current}`}
+                    href={`/${featured.slug.current}`}
                     className="group block bg-[#111827] border border-[#1F2937] rounded-2xl overflow-hidden hover:border-[#3BA3FF]/30 transition-all duration-300"
                     style={{boxShadow:'0 4px 24px rgba(0,0,0,0.4)'}}
                   >
@@ -159,7 +159,7 @@ export default async function CategoryPage({params}: {params: {slug: string}}) {
                     {rest.map((article) => (
                       <Link
                         key={article._id}
-                        href={`/articles/${article.slug.current}`}
+                        href={`/${article.slug.current}`}
                         className="group bg-[#111827] border border-[#1F2937] rounded-xl overflow-hidden hover:border-[#3BA3FF]/30 transition-all duration-300 flex flex-col"
                         style={{boxShadow:'0 4px 16px rgba(0,0,0,0.35)'}}
                       >

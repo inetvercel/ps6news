@@ -71,7 +71,7 @@ export default function TrendingWidgets({ articles }: Props) {
           {trending.map((article, i) => (
             <li key={article._id}>
               <Link
-                href={`/articles/${article.slug.current}`}
+                href={`/${article.slug.current}`}
                 className="group flex items-start gap-3"
               >
                 {/* Rank number */}
@@ -126,7 +126,7 @@ export default function TrendingWidgets({ articles }: Props) {
             {mostRead.map((article, i) => (
               <li key={article._id}>
                 <Link
-                  href={`/articles/${article.slug.current}`}
+                  href={`/${article.slug.current}`}
                   className="group flex items-start gap-3"
                 >
                   <span className={`text-base font-black shrink-0 w-6 leading-none mt-0.5 ${

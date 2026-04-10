@@ -171,7 +171,7 @@ export default function Header() {
                   ) : (
                     <div className="max-h-80 overflow-y-auto">
                       {searchResults.map((result) => {
-                        const href = `/articles/${result.slug.current}`
+                        const href = `/${result.slug.current}`
                         return (
                           <Link
                             key={result._id}

@@ -139,6 +139,20 @@ export default async function ArticlePage({params}: {params: {slug: string}}) {
     {next: {revalidate: 3600}}
   )
 
+  // Fetch 2 related articles (same category, excluding current)
+  const relatedArticles = await client.fetch(
+    `*[_type == "article" && slug.current != $slug && !(_id in path("drafts.**"))] | order(publishedAt desc)[0...2] {
+      _id,
+      title,
+      slug,
+      excerpt,
+      publishedAt,
+      mainImage { asset->{ _id, url } }
+    }`,
+    {slug: params.slug},
+    {next: {revalidate: 3600}}
+  )
+
   // Fetch rumour/leak posts for sidebar
   const rumourPosts = await client.fetch(
     `*[_type == "article" && category->slug.current == "rumors-leaks"] | order(publishedAt desc)[0...20] {
@@ -266,7 +280,7 @@ export default async function ArticlePage({params}: {params: {slug: string}}) {
               {/* Share Buttons */}
               <div className="flex items-center gap-1 text-sm text-[#6B7280]">
                 <span className="mr-1">Share:</span>
-                <a href={`https://twitter.com/intent/tweet?url=https://ps6news.com/articles/${article.slug.current}&text=${encodeURIComponent(article.title)}`} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg hover:bg-[#1F2937] hover:text-white transition-colors">
+                <a href={`https://x.com/intent/post?url=https://ps6news.com/articles/${article.slug.current}&text=${encodeURIComponent(article.title)}`} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg hover:bg-[#1F2937] hover:text-white transition-colors">
                   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
                 </a>
                 <button className="p-2 rounded-lg hover:bg-[#1F2937] hover:text-white transition-colors" title="Copy link">
@@ -324,14 +338,56 @@ export default async function ArticlePage({params}: {params: {slug: string}}) {
                   <span className="text-sm font-bold text-[#3BA3FF]">Need a PSN Name?</span>
                 </div>
                 <p className="text-xs text-[#9CA3AF] mb-3">Generate unique PlayStation usernames instantly with our free tool.</p>
-                <button className="w-full bg-[#0070D1] hover:bg-[#0060BB] text-white font-bold py-2.5 rounded-lg text-sm transition-colors" style={{boxShadow:'0 0 14px rgba(59,163,255,0.3)'}}>
+                <a href="https://www.ps4home.com/tools/psn-username-generator/" target="_blank" rel="noopener noreferrer" className="block w-full bg-[#0070D1] hover:bg-[#0060BB] text-white font-bold py-2.5 rounded-lg text-sm transition-colors text-center" style={{boxShadow:'0 0 14px rgba(59,163,255,0.3)'}}>
                   Try Generator
-                </button>
+                </a>
               </div>
 
             </div>
           </aside>
         </div>
+
+        {/* Related Articles - outside grid, full width below */}
+        {relatedArticles?.length > 0 && (
+          <div className="mt-10 border-t border-[#1F2937] pt-8">
+            <h2 className="text-lg font-bold text-white mb-5 flex items-center gap-2">
+              <span className="w-1 h-5 rounded-full bg-[#3BA3FF] inline-block" style={{boxShadow:'0 0 8px rgba(59,163,255,0.7)'}} />
+              Related Articles
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {relatedArticles.map((rel: any) => (
+                <Link
+                  key={rel._id}
+                  href={`/articles/${rel.slug.current}`}
+                  className="group flex gap-4 bg-[#111827] border border-[#1F2937] rounded-xl p-4 hover:border-[#3BA3FF]/40 transition-all"
+                  style={{boxShadow:'0 0 16px rgba(0,112,209,0.06)'}}
+                >
+                  {rel.mainImage?.asset?.url && (
+                    <div className="shrink-0 w-20 h-20 rounded-lg overflow-hidden bg-[#0B0F1A]">
+                      <img
+                        src={rel.mainImage.asset.url}
+                        alt={rel.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    </div>
+                  )}
+                  <div className="flex flex-col justify-center min-w-0">
+                    <p className="text-xs text-[#3BA3FF] mb-1">
+                      {new Date(rel.publishedAt).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})}
+                    </p>
+                    <h3 className="text-sm font-semibold text-white group-hover:text-[#3BA3FF] transition-colors line-clamp-2 leading-snug">
+                      {rel.title}
+                    </h3>
+                    {rel.excerpt && (
+                      <p className="text-xs text-[#6B7280] mt-1 line-clamp-2">{rel.excerpt}</p>
+                    )}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
       </div>
       </div>
         

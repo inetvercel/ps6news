@@ -53,7 +53,7 @@ export default function SidebarTrending({ trendingPosts, rumourPosts }: SidebarT
         {posts.slice(0, 4).map((post, index) => (
           <Link
             key={post._id}
-            href={`/articles/${post.slug.current}`}
+            href={`/${post.slug.current}`}
             className="group flex items-start gap-3"
           >
             {post.mainImage?.asset?.url ? (

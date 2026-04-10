@@ -69,6 +69,7 @@ export default {
         },
         {
           type: 'image',
+          options: { hotspot: true },
           fields: [
             {
               name: 'alt',
@@ -76,6 +77,12 @@ export default {
               title: 'Alternative text'
             }
           ]
+        },
+        {
+          type: 'keyTakeaways'
+        },
+        {
+          type: 'table'
         }
       ]
     },
@@ -84,6 +91,12 @@ export default {
       title: 'Featured Article',
       type: 'boolean',
       description: 'Show this article in featured sections'
+    },
+    {
+      name: 'updatedAt',
+      title: 'Last Updated',
+      type: 'datetime',
+      description: 'When this article was last updated — shown to readers instead of published date'
     },
     {
       name: 'wordpressId',

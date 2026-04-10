@@ -1,0 +1,5 @@
+const {createClient} = require('@sanity/client')
+const client = createClient({projectId:'zzzwo1aw',dataset:'production',apiVersion:'2024-01-01',token:process.env.SANITY_API_TOKEN,useCdn:false})
+client.fetch(`*[_type == "article" && !(_id in path("drafts.**"))]{_id,title,slug} | order(_id asc)`)
+  .then(r => r.forEach(a => console.log(`${a._id} | ${a.slug.current} | ${a.title}`)))
+  .catch(console.error)

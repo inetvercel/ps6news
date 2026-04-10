@@ -59,7 +59,7 @@ export default function FeaturedGrid({articles}: FeaturedGridProps) {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Featured Article */}
           <div className="lg:col-span-2 relative group">
-            <Link href={`/articles/${mainArticle.slug.current}`}>
+            <Link href={`/${mainArticle.slug.current}`}>
               <div className="relative h-[500px] rounded-2xl overflow-hidden bg-gray-900">
                 {mainArticle.mainImage?.asset?.url && (
                   <Image
@@ -149,7 +149,7 @@ export default function FeaturedGrid({articles}: FeaturedGridProps) {
             {sideArticles.map((article) => (
               <Link
                 key={article._id}
-                href={`/articles/${article.slug.current}`}
+                href={`/${article.slug.current}`}
                 className="group block"
               >
                 <div className="bg-white border border-ps-border rounded-xl overflow-hidden hover:shadow-xl hover:border-ps-blue/30 transition-all duration-300">
