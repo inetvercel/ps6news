@@ -6,7 +6,7 @@ export default function Sidebar() {
     { name: "News", slug: "news" },
     { name: "Rumors & Leaks", slug: "rumors-leaks" },
     { name: "Hardware", slug: "hardware" },
-    { name: "Games & Exclusives", slug: "games-exclusives" },
+    { name: "Games & Exclusives", slug: "games" },
     { name: "Announcements", slug: "announcements" },
     { name: "Other", slug: "other" }
   ]
