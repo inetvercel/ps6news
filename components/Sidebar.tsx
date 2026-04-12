@@ -109,7 +109,7 @@ export default function Sidebar() {
         <div className="bg-[#111827] border border-[#1F2937] rounded-xl p-5">
           <h3 className="text-sm font-bold text-[#3BA3FF] uppercase tracking-widest mb-4 flex items-center gap-2">
             <TrendingUp className="h-4 w-4" />
-            <span>Popular Posts</span>
+            <span>Popular News</span>
           </h3>
           <ul className="space-y-3">
             {popularPosts.map((post, index) => (
