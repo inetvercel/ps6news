@@ -8,6 +8,8 @@ import Footer from '@/components/Footer'
 import Sidebar from '@/components/Sidebar'
 import {Newspaper, Calendar, Layers} from 'lucide-react'
 
+export const revalidate = 60
+
 interface Category {
   _id: string
   title: string
