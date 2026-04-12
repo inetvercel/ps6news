@@ -19,13 +19,25 @@ export default function ContactPage() {
   const [message, setMessage] = useState('')
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setSubmitting(true)
-    await new Promise(r => setTimeout(r, 900))
+    setError(null)
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({name, email, message, reason}),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to send')
+      setSubmitted(true)
+    } catch (err: any) {
+      setError(err.message || 'Something went wrong. Please try again.')
+    }
     setSubmitting(false)
-    setSubmitted(true)
   }
 
   return (
@@ -131,6 +143,14 @@ export default function ContactPage() {
               />
               <p className="text-xs text-[#4B5563] mt-1.5 text-right">{message.length} / 1000</p>
             </div>
+
+            {/* Error */}
+            {error && (
+              <div className="flex items-center gap-2 px-4 py-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                {error}
+              </div>
+            )}
 
             {/* Submit */}
             <button
