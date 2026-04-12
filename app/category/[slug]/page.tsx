@@ -48,7 +48,7 @@ export async function generateMetadata({params}: {params: {slug: string}}) {
   const category = await getCategory(params.slug)
   if (!category) return { title: 'Category Not Found' }
   return {
-    title: `${category.title} | PS6 News`,
+    title: category.title,
     description: category.description || `Latest ${category.title} articles about PlayStation 6`,
   }
 }
