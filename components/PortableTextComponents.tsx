@@ -1,4 +1,5 @@
 import {PortableTextComponents} from '@portabletext/react'
+import Image from 'next/image'
 
 function YouTubeEmbed({url}: {url: string}) {
   const getYouTubeId = (url: string) => {
@@ -63,6 +64,24 @@ function KeyTakeaways({ items }: { items: string[] }) {
 
 export const portableTextComponents: PortableTextComponents = {
   types: {
+    image: ({value}: any) => {
+      const url = value?.asset?.url
+      if (!url) return null
+      return (
+        <figure className="my-8">
+          <Image
+            src={url}
+            alt={value.alt || ''}
+            width={900}
+            height={506}
+            className="w-full rounded-xl"
+          />
+          {value.caption && (
+            <figcaption className="text-center text-xs text-[#6B7280] mt-2">{value.caption}</figcaption>
+          )}
+        </figure>
+      )
+    },
     youtube: ({value}: any) => {
       return <YouTubeEmbed url={value.url} />
     },

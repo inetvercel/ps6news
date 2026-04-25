@@ -23,7 +23,13 @@ export const articleBySlugQuery = groq`*[_type == "article" && slug.current == $
   title,
   slug,
   excerpt,
-  body,
+  body[]{
+    ...,
+    _type == "image" => {
+      ...,
+      asset->{ _id, url }
+    }
+  },
   publishedAt,
   updatedAt,
   featured,
