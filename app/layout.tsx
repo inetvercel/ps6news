@@ -28,6 +28,9 @@ export const metadata: Metadata = {
   authors: [{name: 'PS6News Team'}],
   creator: 'PS6News.com',
   publisher: 'PS6News.com',
+  verification: {
+    google: '4Q-hfqIYnTjKhuCviTmDgkaVMBgsvyBP4oB8FIqyHXY',
+  },
   formatDetection: {
     email: false,
     address: false,
@@ -72,9 +75,6 @@ export const metadata: Metadata = {
     icon: 'https://cdn.sanity.io/images/zzzwo1aw/production/72c1e3e33ce0b42ca24edb13289449384ec66e63-1024x1024.png',
     shortcut: 'https://cdn.sanity.io/images/zzzwo1aw/production/72c1e3e33ce0b42ca24edb13289449384ec66e63-1024x1024.png',
     apple: 'https://cdn.sanity.io/images/zzzwo1aw/production/72c1e3e33ce0b42ca24edb13289449384ec66e63-1024x1024.png',
-  },
-  verification: {
-    google: 'your-google-verification-code',
   },
   other: {
     'google-analytics': 'G-K0LH2MR3HX',
