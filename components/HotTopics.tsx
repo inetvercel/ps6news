@@ -5,21 +5,21 @@ import Link from 'next/link'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 
 const TAGS = [
-  { label: '🔥 PS6 Release Date', href: '/ps6-specs' },
+  { label: '🔥 PS6 Release Date', href: '/ps6-release-date' },
   { label: '⚙️ PS6 Specs',        href: '/ps6-specs' },
   { label: '💰 PS6 Price',         href: '/ps6-cost' },
   { label: '📰 PS6 News',          href: '/category/news' },
   { label: '🕵️ PS6 Leaks',         href: '/ps6-early-specs-leak-amd-power-promises-8k-gaming-at-60-fps' },
   { label: '🎨 PS6 Design',        href: '/what-will-the-ps6-look-like' },
   { label: '🎮 PS6 Controller',    href: '/what-will-the-ps6-look-like' },
-  { label: '📅 PS6 Launch Date',   href: '/how-to-prepare-for-the-ps6-launch' },
+  { label: '📅 PS6 Launch Date',   href: '/ps6-release-date' },
   { label: '💡 PS6 Concept',       href: '/what-will-the-ps6-look-like' },
 ]
 
 const QUESTIONS = [
-  { label: 'When Is PS6 Coming Out?',  href: '/how-to-prepare-for-the-ps6-launch', hot: true,  icon: '📅' },
+  { label: 'When Is PS6 Coming Out?',  href: '/ps6-release-date', hot: true,  icon: '📅' },
   { label: 'What Will PS6 Look Like?', href: '/what-will-the-ps6-look-like',        hot: false, icon: '🎨' },
-  { label: 'Is PS6 Coming Out Soon?',  href: '/ps6-specs',                          hot: false, icon: '⚡' },
+  { label: 'Is PS6 Coming Out Soon?',  href: '/ps6-release-date',               hot: false, icon: '⚡' },
 ]
 
 function shuffle<T>(arr: T[]): T[] {
