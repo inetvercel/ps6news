@@ -10,6 +10,13 @@ import {Newspaper, Calendar, Layers} from 'lucide-react'
 
 export const revalidate = 60
 
+export async function generateStaticParams() {
+  const slugs = await client.fetch<{slug: string}[]>(
+    groq`*[_type == "category"]{"slug": slug.current}`
+  )
+  return slugs.map(({slug}) => ({slug}))
+}
+
 interface Category {
   _id: string
   title: string
