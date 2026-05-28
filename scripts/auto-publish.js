@@ -119,7 +119,7 @@ Respond ONLY with valid JSON (no markdown, no code fences):
 }`
 
   const completion = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
+    model: 'gpt-5',
     messages: [{ role: 'user', content: prompt }],
     temperature: 0.8,
     response_format: { type: 'json_object' },
