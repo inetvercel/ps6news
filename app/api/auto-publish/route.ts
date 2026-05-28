@@ -66,7 +66,7 @@ async function fetchPS6NewsItems() {
 
 async function rewriteWithGemini(title: string, description: string) {
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API!)
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
 
   const prompt = `You are a senior gaming journalist writing for PS6News.com.
 

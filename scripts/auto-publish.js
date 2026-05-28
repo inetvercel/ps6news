@@ -27,7 +27,7 @@ const rssParser = new Parser({ timeout: 10000 })
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
-const MAX_ARTICLES_PER_RUN = 3
+const MAX_ARTICLES_PER_RUN = 1
 
 const RSS_FEEDS = [
   'https://news.google.com/rss/search?q=PlayStation+6+OR+PS6+release&hl=en-GB&gl=GB&ceid=GB:en',
@@ -91,7 +91,7 @@ async function fetchPS6NewsItems() {
 // ── Gemini Rewriter ───────────────────────────────────────────────────────────
 
 async function rewriteWithGemini(title, description) {
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
 
   const prompt = `You are a senior gaming journalist writing for PS6News.com, a specialist PlayStation 6 news website.
 
@@ -233,9 +233,10 @@ async function run() {
       results.push({ title: data.title, slug: data.slug, id: result._id })
       published++
 
-      // Respect Gemini rate limits
+      // Respect Gemini free tier rate limits (15 req/min)
       if (items.indexOf(item) < items.length - 1) {
-        await new Promise(r => setTimeout(r, 3000))
+        console.log('   ⏳ Waiting 8s before next request...')
+        await new Promise(r => setTimeout(r, 8000))
       }
     } catch (err) {
       console.error(`   ❌ Failed: ${err.message}\n`)
