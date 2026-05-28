@@ -10,7 +10,7 @@
 require('dotenv').config({ path: '.env.local' })
 const Parser = require('rss-parser')
 const { createClient } = require('@sanity/client')
-const { GoogleGenerativeAI } = require('@google/generative-ai')
+const OpenAI = require('openai').default || require('openai')
 
 // ── Clients ──────────────────────────────────────────────────────────────────
 
@@ -22,7 +22,7 @@ const sanity = createClient({
   useCdn: false,
 })
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API)
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 const rssParser = new Parser({ timeout: 10000 })
 
 // ── Config ────────────────────────────────────────────────────────────────────
@@ -91,8 +91,6 @@ async function fetchPS6NewsItems() {
 // ── Gemini Rewriter ───────────────────────────────────────────────────────────
 
 async function rewriteWithGemini(title, description) {
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
-
   const prompt = `You are a senior gaming journalist writing for PS6News.com, a specialist PlayStation 6 news website.
 
 Based on the following news snippet, write a complete, original, unique article. Do NOT copy the source text. Write from scratch in your own words.
@@ -120,16 +118,14 @@ Respond ONLY with valid JSON (no markdown, no code fences):
   ]
 }`
 
-  const result = await model.generateContent(prompt)
-  const raw = result.response.text().trim()
+  const completion = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [{ role: 'user', content: prompt }],
+    temperature: 0.8,
+    response_format: { type: 'json_object' },
+  })
 
-  // Strip any markdown code fences Gemini might add
-  const cleaned = raw
-    .replace(/^```(?:json)?\s*/i, '')
-    .replace(/\s*```$/, '')
-    .trim()
-
-  return JSON.parse(cleaned)
+  return JSON.parse(completion.choices[0].message.content)
 }
 
 // ── Sanity Helpers ────────────────────────────────────────────────────────────
@@ -187,8 +183,8 @@ async function publishToSanity(data, authorId, categoryId) {
 async function run() {
   console.log('\n🚀 PS6News Auto-Publisher starting...\n')
 
-  if (!process.env.GEMINI_API) {
-    console.error('❌ GEMINI_API env var is missing. Add it to .env.local')
+  if (!process.env.OPENAI_API_KEY) {
+    console.error('❌ OPENAI_API_KEY env var is missing. Add it to .env.local')
     process.exit(1)
   }
   if (!process.env.SANITY_API_TOKEN && !process.env.SANITY_TOKEN) {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Parser from 'rss-parser'
 import { createClient } from '@sanity/client'
-import { GoogleGenerativeAI } from '@google/generative-ai'
+import OpenAI from 'openai'
 
 const sanity = createClient({
   projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
@@ -65,8 +65,7 @@ async function fetchPS6NewsItems() {
 }
 
 async function rewriteWithGemini(title: string, description: string) {
-  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API!)
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
   const prompt = `You are a senior gaming journalist writing for PS6News.com.
 
@@ -95,10 +94,14 @@ Respond ONLY with valid JSON (no markdown, no code fences):
   ]
 }`
 
-  const result = await model.generateContent(prompt)
-  const raw = result.response.text().trim()
-  const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim()
-  return JSON.parse(cleaned)
+  const completion = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [{ role: 'user', content: prompt }],
+    temperature: 0.8,
+    response_format: { type: 'json_object' },
+  })
+
+  return JSON.parse(completion.choices[0].message.content!)
 }
 
 async function slugExists(slug: string) {
@@ -141,8 +144,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  if (!process.env.GEMINI_API) {
-    return NextResponse.json({ error: 'GEMINI_API not configured' }, { status: 500 })
+  if (!process.env.OPENAI_API_KEY) {
+    return NextResponse.json({ error: 'OPENAI_API_KEY not configured' }, { status: 500 })
   }
 
   try {
