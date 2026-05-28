@@ -131,6 +131,7 @@ STRICT RULES:
 4. Write in sharp, engaging British English — active voice, strong verbs, no waffle.
 5. Structure the article properly: strong intro hook, developed body with subheadings, solid closing paragraph.
 6. Each body paragraph must be 60-100 words. Do not write one-liners.
+7. IMPORTANT: Do NOT repeatedly name the source publication. You may mention it ONCE at most (e.g. "according to a recent report"). After that, write as if PS6News is reporting the story directly — use phrases like "the report states", "sources indicate", or just state the facts plainly. Never repeat the outlet name more than once.
 
 ${contentLabel}:
 """
