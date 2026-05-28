@@ -122,15 +122,15 @@ async function rewriteWithGemini(title, description, link) {
 
   console.log(`   📄 Source: ${fullContent ? fullContent.length + ' chars fetched' : 'using RSS snippet only'}`)
 
-  const prompt = `You are a journalist rewriting a news article for PS6News.com, a PlayStation 6 specialist news site. The current year is 2026.
+  const prompt = `You are a senior gaming journalist writing for PS6News.com. The current year is 2026. Write a full, professional news article — minimum 600 words — in the style of IGN, Eurogamer or The Verge.
 
-STRICT RULES — YOU MUST FOLLOW THESE:
-1. ONLY use facts, quotes, figures and claims found in the SOURCE TEXT below. Do not invent, assume or add anything not stated in the source.
-2. Do not add "likely", "expected", "probably" or any speculation unless the source explicitly speculates.
-3. Do not add generic PS6 background info (specs, price guesses, release date guesses) unless the source mentions it.
-4. Rewrite in your own words — do not copy sentences verbatim, but preserve all facts exactly.
-5. Write in clear, engaging British English for a gaming news audience.
-6. Be detailed — cover everything the source reports.
+STRICT RULES:
+1. Base the article ONLY on the SOURCE TEXT below. Do not invent facts, quotes, specs or dates not present in the source.
+2. If the source speculates, you may reflect that speculation — but label it as such (e.g. "the outlet suggests", "according to the report").
+3. Rewrite completely in your own words. Do not copy sentences verbatim.
+4. Write in sharp, engaging British English — active voice, strong verbs, no waffle.
+5. Structure the article properly: strong intro hook, developed body with subheadings, solid closing paragraph.
+6. Each body paragraph must be 60-100 words. Do not write one-liners.
 
 ${contentLabel}:
 """
@@ -139,20 +139,42 @@ ${sourceText.substring(0, 6000)}
 
 Respond ONLY with valid JSON (no markdown, no code fences):
 {
-  "title": "Accurate headline under 70 characters based only on what the source reports",
-  "slug": "seo-url-slug-lowercase-hyphens-max-55-chars",
-  "excerpt": "Factual meta description 120-150 characters summarising the actual news",
-  "body": [
-    "Opening paragraph: the core news story — what happened, who said it, when",
-    "Second paragraph: key details and context from the source",
-    "Third paragraph: any quotes, reactions or additional details from the source",
-    "Fourth paragraph: any implications or follow-up info mentioned in the source",
-    "Fifth paragraph: what to watch for next, based only on what the source states"
+  "title": "Sharp, accurate headline under 70 chars — make it compelling",
+  "slug": "seo-slug-lowercase-hyphens-max-55-chars",
+  "excerpt": "Punchy meta description 130-155 characters that makes readers want to click",
+  "sections": [
+    {
+      "heading": null,
+      "paragraphs": [
+        "Strong opening paragraph (60-90 words): lead with the most important fact. Who reported it, what they said, why it matters.",
+        "Second paragraph (60-90 words): expand on the core claim with supporting detail from the source."
+      ]
+    },
+    {
+      "heading": "Section heading relevant to next topic",
+      "paragraphs": [
+        "Third paragraph (60-90 words): dive into a specific detail or angle from the source.",
+        "Fourth paragraph (60-90 words): quotes, reactions, or additional specifics from the source."
+      ]
+    },
+    {
+      "heading": "Another section heading",
+      "paragraphs": [
+        "Fifth paragraph (60-90 words): implications or context mentioned in the source.",
+        "Sixth paragraph (60-90 words): what this means for PS6 fans based on what the source states."
+      ]
+    },
+    {
+      "heading": "What to Watch For",
+      "paragraphs": [
+        "Closing paragraph (60-90 words): what happens next, what to look out for — based only on the source."
+      ]
+    }
   ],
   "keyTakeaways": [
-    "Specific factual point from the source",
-    "Another specific factual point from the source",
-    "Third specific factual point from the source"
+    "Specific factual point from the source in one sentence",
+    "Another specific factual point from the source in one sentence",
+    "Third specific factual point from the source in one sentence"
   ]
 }`
 
@@ -197,7 +219,23 @@ async function publishToSanity(data, authorId, categoryId) {
     })
   }
 
-  body.push(...textToBlocks(data.body))
+  // Support both old flat body[] and new sections[] format
+  if (data.sections?.length) {
+    for (const section of data.sections) {
+      if (section.heading) {
+        body.push({
+          _type: 'block',
+          _key: randomKey(),
+          style: 'h2',
+          markDefs: [],
+          children: [{ _type: 'span', _key: randomKey(), text: section.heading, marks: [] }],
+        })
+      }
+      body.push(...textToBlocks(section.paragraphs || []))
+    }
+  } else {
+    body.push(...textToBlocks(data.body || []))
+  }
 
   const doc = {
     _type: 'article',
