@@ -11,6 +11,7 @@ require('dotenv').config({ path: '.env.local' })
 const Parser = require('rss-parser')
 const { createClient } = require('@sanity/client')
 const OpenAI = require('openai').default || require('openai')
+const axios = require('axios')
 
 // ── Clients ──────────────────────────────────────────────────────────────────
 
@@ -57,6 +58,29 @@ function stripHtml(html = '') {
   return html.replace(/<[^>]*>/g, '').replace(/&[a-z]+;/gi, ' ').trim()
 }
 
+// ── Full Article Fetcher ──────────────────────────────────────────────────────
+
+async function fetchArticleContent(url) {
+  try {
+    const res = await axios.get(url, {
+      timeout: 12000,
+      maxRedirects: 8,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml',
+      },
+    })
+    const html = res.data
+    // Extract all <p> tag content — best signal for article body text
+    const paragraphs = [...html.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi)]
+      .map(m => stripHtml(m[1]).trim())
+      .filter(p => p.length > 60 && !/cookie|subscribe|newsletter|sign up|advertisement/i.test(p))
+    return paragraphs.slice(0, 25).join('\n\n')
+  } catch {
+    return null
+  }
+}
+
 // ── RSS Fetching ──────────────────────────────────────────────────────────────
 
 async function fetchPS6NewsItems() {
@@ -90,38 +114,51 @@ async function fetchPS6NewsItems() {
 
 // ── Gemini Rewriter ───────────────────────────────────────────────────────────
 
-async function rewriteWithGemini(title, description) {
-  const prompt = `You are a senior gaming journalist writing for PS6News.com, a specialist PlayStation 6 news website.
+async function rewriteWithGemini(title, description, link) {
+  console.log('   🌐 Fetching full article...')
+  const fullContent = link ? await fetchArticleContent(link) : null
+  const sourceText = fullContent || description || 'No content available'
+  const contentLabel = fullContent ? 'FULL ARTICLE TEXT' : 'SUMMARY (full article unavailable)'
 
-Based on the following news snippet, write a complete, original, unique article. Do NOT copy the source text. Write from scratch in your own words.
+  console.log(`   📄 Source: ${fullContent ? fullContent.length + ' chars fetched' : 'using RSS snippet only'}`)
 
-SOURCE:
-Title: "${title}"
-Summary: "${description || 'No summary available'}"
+  const prompt = `You are a journalist rewriting a news article for PS6News.com, a PlayStation 6 specialist news site. The current year is 2026.
+
+STRICT RULES — YOU MUST FOLLOW THESE:
+1. ONLY use facts, quotes, figures and claims found in the SOURCE TEXT below. Do not invent, assume or add anything not stated in the source.
+2. Do not add "likely", "expected", "probably" or any speculation unless the source explicitly speculates.
+3. Do not add generic PS6 background info (specs, price guesses, release date guesses) unless the source mentions it.
+4. Rewrite in your own words — do not copy sentences verbatim, but preserve all facts exactly.
+5. Write in clear, engaging British English for a gaming news audience.
+6. Be detailed — cover everything the source reports.
+
+${contentLabel}:
+"""
+${sourceText.substring(0, 6000)}
+"""
 
 Respond ONLY with valid JSON (no markdown, no code fences):
 {
-  "title": "Compelling headline under 70 characters, different from source title",
+  "title": "Accurate headline under 70 characters based only on what the source reports",
   "slug": "seo-url-slug-lowercase-hyphens-max-55-chars",
-  "excerpt": "Meta description 120-150 characters, summarising the article",
+  "excerpt": "Factual meta description 120-150 characters summarising the actual news",
   "body": [
-    "Opening paragraph 60-90 words: hook + main news angle",
-    "Second paragraph: context and background about PS6",
-    "Third paragraph: analysis of what this means for gamers",
-    "Fourth paragraph: relevant PS6 specs/release/price context",
-    "Fifth paragraph: closing thoughts and what to watch for"
+    "Opening paragraph: the core news story — what happened, who said it, when",
+    "Second paragraph: key details and context from the source",
+    "Third paragraph: any quotes, reactions or additional details from the source",
+    "Fourth paragraph: any implications or follow-up info mentioned in the source",
+    "Fifth paragraph: what to watch for next, based only on what the source states"
   ],
   "keyTakeaways": [
-    "First key point in one clear sentence",
-    "Second key point in one clear sentence",
-    "Third key point in one clear sentence"
+    "Specific factual point from the source",
+    "Another specific factual point from the source",
+    "Third specific factual point from the source"
   ]
 }`
 
   const completion = await openai.chat.completions.create({
     model: 'gpt-5',
     messages: [{ role: 'user', content: prompt }],
-    temperature: 0.8,
     response_format: { type: 'json_object' },
   })
 
@@ -214,7 +251,7 @@ async function run() {
     console.log(`📰 Processing: "${item.title}"`)
     try {
       console.log('   ✍️  Rewriting with Gemini...')
-      const data = await rewriteWithGemini(item.title, item.description)
+      const data = await rewriteWithGemini(item.title, item.description, item.link)
 
       if (await slugExists(data.slug)) {
         console.log(`   ⏭️  Skipped — slug already exists: /${data.slug}\n`)
