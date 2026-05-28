@@ -2,7 +2,7 @@ name: Daily PS6 News Auto-Publish
 
 on:
   schedule:
-    - cron: '0 8 * * *'   # Every day at 8:00am UTC
+    - cron: '0 8,16 * * *'  # Every day at 8am and 4pm UTC
   workflow_dispatch:        # Manual trigger from GitHub Actions tab
 
 jobs:

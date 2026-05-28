@@ -44,18 +44,50 @@ function randomKey() {
   return Math.random().toString(36).substr(2, 12)
 }
 
-function textToBlocks(paragraphs) {
-  return paragraphs.map(text => ({
-    _type: 'block',
-    _key: randomKey(),
-    style: 'normal',
-    markDefs: [],
-    children: [{ _type: 'span', _key: randomKey(), text: text.trim(), marks: [] }],
-  }))
+function parseParagraphWithLinks(text, existingArticles) {
+  const linkPattern = /\[\[LINK:([^|]+)\|([^\]]+)\]\]/g
+  const markDefs = []
+  const children = []
+  let lastIndex = 0
+  let match
+  while ((match = linkPattern.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      children.push({ _type: 'span', _key: randomKey(), text: text.slice(lastIndex, match.index), marks: [] })
+    }
+    const [, slug, anchorText] = match
+    const article = existingArticles.find(a => a.slug === slug)
+    if (article) {
+      const linkKey = randomKey()
+      markDefs.push({ _key: linkKey, _type: 'internalLink', reference: { _type: 'reference', _ref: article._id } })
+      children.push({ _type: 'span', _key: randomKey(), text: anchorText, marks: [linkKey] })
+    } else {
+      children.push({ _type: 'span', _key: randomKey(), text: anchorText, marks: [] })
+    }
+    lastIndex = match.index + match[0].length
+  }
+  if (lastIndex < text.length) {
+    children.push({ _type: 'span', _key: randomKey(), text: text.slice(lastIndex), marks: [] })
+  }
+  return {
+    children: children.length > 0 ? children : [{ _type: 'span', _key: randomKey(), text: text.trim(), marks: [] }],
+    markDefs,
+  }
+}
+
+function textToBlocks(paragraphs, existingArticles = []) {
+  return paragraphs.map(text => {
+    const { children, markDefs } = parseParagraphWithLinks(text.trim(), existingArticles)
+    return { _type: 'block', _key: randomKey(), style: 'normal', markDefs, children }
+  })
 }
 
 function stripHtml(html = '') {
   return html.replace(/<[^>]*>/g, '').replace(/&[a-z]+;/gi, ' ').trim()
+}
+
+const AXIOS_HEADERS = {
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36',
+  'Accept': 'text/html,application/xhtml+xml,*/*',
 }
 
 // ── Full Article Fetcher ──────────────────────────────────────────────────────
@@ -65,10 +97,7 @@ async function fetchArticleContent(url) {
     const res = await axios.get(url, {
       timeout: 12000,
       maxRedirects: 8,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml',
-      },
+      headers: AXIOS_HEADERS,
     })
     const html = res.data
     // Extract all <p> tag content — best signal for article body text
@@ -79,6 +108,75 @@ async function fetchArticleContent(url) {
   } catch {
     return null
   }
+}
+
+// ── Image Scraper ────────────────────────────────────────────────────────────
+
+async function fetchOgImage(url) {
+  try {
+    const res = await axios.get(url, { timeout: 10000, maxRedirects: 5, headers: AXIOS_HEADERS })
+    const html = res.data
+    const patterns = [
+      /<meta[^>]+property="og:image"[^>]+content="([^"]+)"/i,
+      /<meta[^>]+content="([^"]+)"[^>]+property="og:image"/i,
+      /<meta[^>]+name="twitter:image"[^>]+content="([^"]+)"/i,
+      /<meta[^>]+content="([^"]+)"[^>]+name="twitter:image"/i,
+    ]
+    for (const pattern of patterns) {
+      const match = html.match(pattern)
+      if (match?.[1]?.startsWith('http')) return match[1]
+    }
+  } catch {}
+  return null
+}
+
+async function uploadImageToSanity(imageUrl) {
+  try {
+    const res = await axios.get(imageUrl, {
+      responseType: 'arraybuffer',
+      timeout: 15000,
+      headers: AXIOS_HEADERS,
+    })
+    const buffer = Buffer.from(res.data)
+    const contentType = res.headers['content-type'] || 'image/jpeg'
+    const ext = contentType.split('/')[1]?.split(';')[0]?.replace('jpeg', 'jpg') || 'jpg'
+    const asset = await sanity.assets.upload('image', buffer, {
+      filename: `ps6-auto-${Date.now()}.${ext}`,
+      contentType,
+    })
+    console.log(`   🖼️  Image uploaded: ${asset._id}`)
+    return asset._id
+  } catch (err) {
+    console.warn(`   ⚠️  Image upload failed: ${err.message}`)
+    return null
+  }
+}
+
+// ── Duplicate & Existing Articles ─────────────────────────────────────────────
+
+async function isDuplicateContent(title) {
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+  const recentTitles = await sanity.fetch(
+    `*[_type == "article" && publishedAt > $date][].title`,
+    { date: sevenDaysAgo }
+  )
+  const stopWords = new Set(['about', 'their', 'which', 'there', 'could', 'would', 'should', 'playstation', 'release', 'looks', 'knows', 'says'])
+  const newWords = new Set(
+    title.toLowerCase().split(/\W+/).filter(w => w.length > 4 && !stopWords.has(w))
+  )
+  for (const recent of recentTitles) {
+    if (!recent) continue
+    const recentWords = recent.toLowerCase().split(/\W+/).filter(w => w.length > 4 && !stopWords.has(w))
+    const overlap = recentWords.filter(w => newWords.has(w)).length
+    if (overlap >= 3) return recent
+  }
+  return null
+}
+
+async function fetchExistingArticles() {
+  return await sanity.fetch(
+    `*[_type == "article"][0..30]{ _id, title, "slug": slug.current }`
+  )
 }
 
 // ── RSS Fetching ──────────────────────────────────────────────────────────────
@@ -114,13 +212,17 @@ async function fetchPS6NewsItems() {
 
 // ── Gemini Rewriter ───────────────────────────────────────────────────────────
 
-async function rewriteWithGemini(title, description, link) {
+async function rewriteWithGemini(title, description, link, existingArticles = []) {
   console.log('   🌐 Fetching full article...')
   const fullContent = link ? await fetchArticleContent(link) : null
   const sourceText = fullContent || description || 'No content available'
   const contentLabel = fullContent ? 'FULL ARTICLE TEXT' : 'SUMMARY (full article unavailable)'
 
   console.log(`   📄 Source: ${fullContent ? fullContent.length + ' chars fetched' : 'using RSS snippet only'}`)
+
+  const articlesContext = existingArticles.length
+    ? `\n\nEXISTING PS6NEWS ARTICLES — for natural internal links only:\n${existingArticles.slice(0, 15).map(a => `- "${a.title}" → slug: ${a.slug}`).join('\n')}\nIf a topic in your article genuinely relates to one of these, you may wrap the anchor text like this: [[LINK:slug|anchor text]] — once or twice max, only where it reads naturally. Never force it.`
+    : ''
 
   const prompt = `You are a senior gaming journalist writing for PS6News.com. The current year is 2026. Write a full, professional news article — minimum 600 words — in the style of IGN, Eurogamer or The Verge.
 
@@ -131,7 +233,8 @@ STRICT RULES:
 4. Write in sharp, engaging British English — active voice, strong verbs, no waffle.
 5. Structure the article properly: strong intro hook, developed body with subheadings, solid closing paragraph.
 6. Each body paragraph must be 60-100 words. Do not write one-liners.
-7. IMPORTANT: Do NOT repeatedly name the source publication. You may mention it ONCE at most (e.g. "according to a recent report"). After that, write as if PS6News is reporting the story directly — use phrases like "the report states", "sources indicate", or just state the facts plainly. Never repeat the outlet name more than once.
+7. Do NOT repeatedly name the source publication. Mention it ONCE at most, then write as PS6News's own reporting.
+8. Internal links: use [[LINK:slug|anchor text]] syntax sparingly and only where natural.${articlesContext}
 
 ${contentLabel}:
 """
@@ -188,6 +291,7 @@ Respond ONLY with valid JSON (no markdown, no code fences):
   return JSON.parse(completion.choices[0].message.content)
 }
 
+
 // ── Sanity Helpers ────────────────────────────────────────────────────────────
 
 async function slugExists(slug) {
@@ -209,7 +313,7 @@ async function getCategoryId(slugName) {
   )
 }
 
-async function publishToSanity(data, authorId, categoryId) {
+async function publishToSanity(data, authorId, categoryId, imageAssetId, existingArticles = []) {
   const body = []
 
   if (data.keyTakeaways?.length) {
@@ -220,7 +324,6 @@ async function publishToSanity(data, authorId, categoryId) {
     })
   }
 
-  // Support both old flat body[] and new sections[] format
   if (data.sections?.length) {
     for (const section of data.sections) {
       if (section.heading) {
@@ -232,10 +335,10 @@ async function publishToSanity(data, authorId, categoryId) {
           children: [{ _type: 'span', _key: randomKey(), text: section.heading, marks: [] }],
         })
       }
-      body.push(...textToBlocks(section.paragraphs || []))
+      body.push(...textToBlocks(section.paragraphs || [], existingArticles))
     }
   } else {
-    body.push(...textToBlocks(data.body || []))
+    body.push(...textToBlocks(data.body || [], existingArticles))
   }
 
   const doc = {
@@ -250,6 +353,12 @@ async function publishToSanity(data, authorId, categoryId) {
 
   if (authorId) doc.author = { _type: 'reference', _ref: authorId }
   if (categoryId) doc.category = { _type: 'reference', _ref: categoryId }
+  if (imageAssetId) {
+    doc.mainImage = {
+      _type: 'image',
+      asset: { _type: 'reference', _ref: imageAssetId },
+    }
+  }
 
   return await sanity.create(doc)
 }
@@ -286,11 +395,22 @@ async function run() {
   let skipped = 0
   const results = []
 
+  const existingArticles = await fetchExistingArticles()
+  console.log(`   Found ${existingArticles.length} existing articles for internal linking\n`)
+
   for (const item of items) {
     console.log(`📰 Processing: "${item.title}"`)
     try {
-      console.log('   ✍️  Rewriting with Gemini...')
-      const data = await rewriteWithGemini(item.title, item.description, item.link)
+      // Duplicate check
+      const duplicate = await isDuplicateContent(item.title)
+      if (duplicate) {
+        console.log(`   ⏭️  Skipped — similar article published recently: "${duplicate}"\n`)
+        skipped++
+        continue
+      }
+
+      console.log('   ✍️  Rewriting with GPT-5...')
+      const data = await rewriteWithGemini(item.title, item.description, item.link, existingArticles)
 
       if (await slugExists(data.slug)) {
         console.log(`   ⏭️  Skipped — slug already exists: /${data.slug}\n`)
@@ -298,7 +418,19 @@ async function run() {
         continue
       }
 
-      const result = await publishToSanity(data, authorId, categoryId)
+      // Try to scrape and upload featured image
+      let imageAssetId = null
+      if (item.link) {
+        console.log('   🔍 Looking for featured image...')
+        const ogImageUrl = await fetchOgImage(item.link)
+        if (ogImageUrl) {
+          imageAssetId = await uploadImageToSanity(ogImageUrl)
+        } else {
+          console.log('   ⚠️  No OG image found')
+        }
+      }
+
+      const result = await publishToSanity(data, authorId, categoryId, imageAssetId, existingArticles)
       console.log(`   ✅ Published: "${data.title}"`)
       console.log(`      URL: https://ps6news.com/${data.slug}`)
       console.log(`      ID:  ${result._id}\n`)
