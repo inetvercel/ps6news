@@ -9,7 +9,8 @@
     "lint": "next lint",
     "studio": "sanity dev --port 3333",
     "studio:deploy": "sanity deploy",
-    "import:wordpress": "node scripts/import-wordpress.js"
+    "import:wordpress": "node scripts/import-wordpress.js",
+    "publish-news": "node scripts/auto-publish.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
@@ -25,6 +26,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "resend": "^6.10.0",
+    "rss-parser": "^3.13.0",
     "sanity": "^3.19.0",
     "sanity-plugin-media": "^4.1.1",
     "sanity-plugin-table": "^2.3.0",
