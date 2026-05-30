@@ -119,6 +119,18 @@ async function fetchArticleContent(url) {
 
 // ── Image Scraper ────────────────────────────────────────────────────────────
 
+function isLikelyArticleImage(imgUrl) {
+  if (!imgUrl) return false
+  const lower = imgUrl.toLowerCase()
+  // Reject tiny icons, logos, avatars, favicons
+  if (/logo|icon|favicon|avatar|badge|sprite|placeholder|default|blank|pixel|tracking/i.test(lower)) return false
+  // Reject known small image patterns (300x300 or smaller squares — usually site logos)
+  if (/[_-](\d{2,3})x\2[_\-./]/i.test(lower)) return false  // e.g. 300x300
+  // Must be a recognisable image extension or CDN path
+  if (!/\.(jpg|jpeg|png|webp|gif)($|\?)|\/images\/|\/uploads\/|\/media\/|\/content\/|\/wp-content\/|\/cdn\//i.test(lower)) return false
+  return true
+}
+
 async function fetchOgImage(url) {
   try {
     const res = await axios.get(url, { timeout: 10000, maxRedirects: 5, headers: AXIOS_HEADERS })
@@ -131,7 +143,8 @@ async function fetchOgImage(url) {
     ]
     for (const pattern of patterns) {
       const match = html.match(pattern)
-      if (match?.[1]?.startsWith('http')) return match[1]
+      const imgUrl = match?.[1]
+      if (imgUrl?.startsWith('http') && isLikelyArticleImage(imgUrl)) return imgUrl
     }
   } catch {}
   return null
