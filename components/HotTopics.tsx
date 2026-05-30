@@ -19,7 +19,7 @@ const TAGS = [
 const QUESTIONS = [
   { label: 'When Is PS6 Coming Out?',  href: '/ps6-release-date', hot: true,  icon: '📅' },
   { label: 'What Will PS6 Look Like?', href: '/what-will-the-ps6-look-like',        hot: false, icon: '🎨' },
-  { label: 'Is PS6 Coming Out Soon?',  href: '/is-the-ps6-coming-soon-',          hot: false, icon: '⚡' },
+  { label: 'Is PS6 Coming Out Soon?',  href: '/is-the-ps6-coming-soon',           hot: false, icon: '⚡' },
 ]
 
 function shuffle<T>(arr: T[]): T[] {
