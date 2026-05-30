@@ -32,11 +32,18 @@ const MAX_ARTICLES_PER_RUN = 1
 
 const RSS_FEEDS = [
   'https://news.google.com/rss/search?q=PlayStation+6+OR+PS6+release&hl=en-GB&gl=GB&ceid=GB:en',
+  'https://news.google.com/rss/search?q=PS6+Sony+console&hl=en-GB&gl=GB&ceid=GB:en',
+  'https://news.google.com/rss/search?q=Sony+PlayStation+next+gen+2026&hl=en-GB&gl=GB&ceid=GB:en',
   'https://www.videogameschronicle.com/feed/',
   'https://www.eurogamer.net/feed',
+  'https://feeds.feedburner.com/ign/all-articles',
+  'https://kotaku.com/rss',
+  'https://www.pushsquare.com/feeds/latest',
+  'https://www.gamesradar.com/rss/',
+  'https://www.theverge.com/rss/index.xml',
 ]
 
-const PS6_KEYWORDS = /ps6|playstation\s?6|next.gen playstation/i
+const PS6_KEYWORDS = /\bps6\b|playstation\s?6|next[- ]gen playstation|sony.{0,20}next.{0,10}console|ps6 release|ps6 price|ps6 specs|ps6 launch/i
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -154,21 +161,20 @@ async function uploadImageToSanity(imageUrl) {
 
 // ── Duplicate & Existing Articles ─────────────────────────────────────────────
 
-async function isDuplicateContent(title) {
-  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
-  const recentTitles = await sanity.fetch(
-    `*[_type == "article" && publishedAt > $date][].title`,
-    { date: sevenDaysAgo }
-  )
-  const stopWords = new Set(['about', 'their', 'which', 'there', 'could', 'would', 'should', 'playstation', 'release', 'looks', 'knows', 'says'])
+async function isDuplicateContent(title, existingArticles) {
+  const stopWords = new Set([
+    'about', 'their', 'which', 'there', 'could', 'would', 'should',
+    'playstation', 'release', 'looks', 'knows', 'says', 'report',
+    'claims', 'latest', 'after', 'before', 'still', 'delay', 'delayed',
+  ])
   const newWords = new Set(
     title.toLowerCase().split(/\W+/).filter(w => w.length > 4 && !stopWords.has(w))
   )
-  for (const recent of recentTitles) {
-    if (!recent) continue
-    const recentWords = recent.toLowerCase().split(/\W+/).filter(w => w.length > 4 && !stopWords.has(w))
+  for (const article of existingArticles) {
+    if (!article.title) continue
+    const recentWords = article.title.toLowerCase().split(/\W+/).filter(w => w.length > 4 && !stopWords.has(w))
     const overlap = recentWords.filter(w => newWords.has(w)).length
-    if (overlap >= 3) return recent
+    if (overlap >= 4) return article.title
   }
   return null
 }
@@ -200,7 +206,7 @@ async function fetchPS6NewsItems() {
           link: item.link,
           pubDate: item.pubDate,
         })
-        if (items.length >= MAX_ARTICLES_PER_RUN * 2) break
+        if (items.length >= MAX_ARTICLES_PER_RUN * 5) break
       }
     } catch (err) {
       console.warn(`  ⚠️  Feed failed (${feedUrl}): ${err.message}`)
@@ -402,7 +408,7 @@ async function run() {
     console.log(`📰 Processing: "${item.title}"`)
     try {
       // Duplicate check
-      const duplicate = await isDuplicateContent(item.title)
+      const duplicate = await isDuplicateContent(item.title, existingArticles)
       if (duplicate) {
         console.log(`   ⏭️  Skipped — similar article published recently: "${duplicate}"\n`)
         skipped++
