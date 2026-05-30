@@ -1,16 +1,16 @@
 import {NextRequest, NextResponse} from 'next/server'
 import {createClient} from '@sanity/client'
-import {GoogleGenerativeAI} from '@google/generative-ai'
+import OpenAI from 'openai'
 
 const sanityClient = createClient({
   projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
   dataset: process.env.NEXT_PUBLIC_SANITY_DATASET || 'production',
-  token: process.env.SANITY_TOKEN,
+  token: process.env.SANITY_API_TOKEN || process.env.SANITY_TOKEN,
   apiVersion: '2024-01-01',
   useCdn: false,
 })
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API!)
+const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY})
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({poll: existing, message: 'Poll already exists'})
     }
 
-    // Generate poll using Gemini
+    // Generate poll using OpenAI
     const prompt = `Generate a fun, engaging poll question for a gaming news article. The poll should be relevant to the article topic and have exactly 4 answer options.
 
 Article Title: "${title}"
@@ -39,22 +39,22 @@ ${excerpt ? `Article Summary: "${excerpt.substring(0, 300)}"` : ''}
 Respond in this exact JSON format only, no markdown, no other text:
 {"question": "Your poll question here?", "options": ["Option 1", "Option 2", "Option 3", "Option 4"]}`
 
-    const model = genAI.getGenerativeModel({model: 'gemini-2.0-flash'})
-    const result = await model.generateContent(prompt)
-    const content = result.response.text().trim()
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [{role: 'user', content: prompt}],
+      response_format: {type: 'json_object'},
+    })
+    const content = completion.choices[0].message.content?.trim() || ''
 
     if (!content) {
-      return NextResponse.json({error: 'No response from Gemini'}, {status: 500})
+      return NextResponse.json({error: 'No response from OpenAI'}, {status: 500})
     }
-
-    // Strip markdown code fences if present
-    const cleaned = content.replace(/^```(?:json)?\n?/i, '').replace(/\n?```$/i, '').trim()
 
     let pollData
     try {
-      pollData = JSON.parse(cleaned)
+      pollData = JSON.parse(content)
     } catch {
-      return NextResponse.json({error: 'Failed to parse Gemini response', raw: content}, {status: 500})
+      return NextResponse.json({error: 'Failed to parse OpenAI response', raw: content}, {status: 500})
     }
 
     if (!pollData.question || !pollData.options || pollData.options.length < 2) {
