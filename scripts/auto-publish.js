@@ -12,6 +12,7 @@ const Parser = require('rss-parser')
 const { createClient } = require('@sanity/client')
 const OpenAI = require('openai').default || require('openai')
 const axios = require('axios')
+const { detectCategorySlug } = require('./lib/categorize')
 
 // ── Clients ──────────────────────────────────────────────────────────────────
 
@@ -370,6 +371,14 @@ async function getCategoryId(slugName) {
   )
 }
 
+// Returns a map of category slug -> _id for all categories
+async function getCategoryMap() {
+  const cats = await sanity.fetch(`*[_type == "category"]{ "slug": slug.current, _id }`)
+  const map = {}
+  for (const c of cats) if (c.slug) map[c.slug] = c._id
+  return map
+}
+
 async function publishToSanity(data, authorId, categoryId, imageAssetId, existingArticles = []) {
   const body = []
 
@@ -445,8 +454,8 @@ async function run() {
   console.log(`\nFound ${items.length} items to process\n`)
 
   const authorId = await getDefaultAuthorId()
-  const categoryId = await getCategoryId('news')
-  console.log(`Author: ${authorId || 'none'} | Category: ${categoryId || 'none'}\n`)
+  const categoryMap = await getCategoryMap()
+  console.log(`Author: ${authorId || 'none'} | Categories: ${Object.keys(categoryMap).join(', ') || 'none'}\n`)
 
   let published = 0
   let skipped = 0
@@ -487,6 +496,12 @@ async function run() {
           console.log('   ⚠️  No OG image found')
         }
       }
+
+      // Auto-detect category from the rewritten content (title weighted heavily)
+      const catBody = `${data.excerpt || ''} ${(data.sections || []).map(s => `${s.heading || ''} ${(s.paragraphs || []).join(' ')}`).join(' ')} ${(data.body || []).join(' ')}`
+      const catSlug = detectCategorySlug(data.title || '', catBody)
+      const categoryId = categoryMap[catSlug] || categoryMap['news']
+      console.log(`   🏷️  Category: ${catSlug}`)
 
       const result = await publishToSanity(data, authorId, categoryId, imageAssetId, existingArticles)
       console.log(`   ✅ Published: "${data.title}"`)
