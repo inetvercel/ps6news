@@ -25,26 +25,43 @@ async function getLogoBuffer() {
   return logoCache
 }
 
-// Embed the font directly in the SVG so rendering is identical on every
-// platform (Windows dev + Linux CI) and never depends on system fonts.
-let fontDataUri = null
-function getFontDataUri() {
-  if (fontDataUri) return fontDataUri
+// Locate the bundled font on disk. We render the URL text with sharp's native
+// text engine using this file directly (via the `fontfile` option) — this is
+// reliable across platforms (Windows dev + Linux serverless), unlike SVG
+// @font-face which librsvg does not honour in many builds (-> tofu boxes).
+let fontPath = null
+let fontPathResolved = false
+function getFontPath() {
+  if (fontPathResolved) return fontPath
+  fontPathResolved = true
   const candidates = [
     path.join(__dirname, '..', 'assets', 'Rajdhani-SemiBold.ttf'),
     path.join(process.cwd(), 'scripts', 'assets', 'Rajdhani-SemiBold.ttf'),
   ]
   for (const p of candidates) {
-    try {
-      const ttf = fs.readFileSync(p)
-      fontDataUri = `data:font/ttf;base64,${ttf.toString('base64')}`
-      return fontDataUri
-    } catch {
-      // try next candidate
+    if (fs.existsSync(p)) {
+      fontPath = p
+      return fontPath
     }
   }
-  fontDataUri = null
-  return fontDataUri
+  fontPath = null
+  return fontPath
+}
+
+// Render a single line of text to an RGBA PNG buffer using libvips/pango with
+// the bundled TTF. Returns {buffer, width, height}.
+async function renderText(text, {pt, color, letterSpacing}) {
+  const fp = getFontPath()
+  const spacing = Math.round((letterSpacing || 0) * 1024)
+  const textOpts = {
+    text: `<span letter_spacing="${spacing}" foreground="${color}">${escapeXml(text)}</span>`,
+    font: `Rajdhani SemiBold ${pt}`,
+    rgba: true,
+    dpi: 72,
+  }
+  if (fp) textOpts.fontfile = fp
+  const out = await sharp({ text: textOpts }).png().toBuffer({ resolveWithObject: true })
+  return { buffer: out.data, width: out.info.width, height: out.info.height }
 }
 
 function escapeXml(s) {
@@ -95,17 +112,10 @@ async function applyWatermark(inputBuffer) {
     .png()
     .toBuffer()
 
-  const font = getFontDataUri()
-  const fontFace = font
-    ? `@font-face { font-family: 'PS6'; src: url('${font}') format('truetype'); }`
-    : ''
-  const fontFamily = font ? 'PS6, Arial, sans-serif' : 'Arial, Helvetica, sans-serif'
-
-  // Backdrop + URL text as an SVG overlay. Darker glassy gradient, a soft
-  // inner border, and a thin PlayStation-blue accent under the logo.
+  // Backdrop only (SVG): darker glassy gradient, soft inner border, and a thin
+  // PlayStation-blue accent under the logo. Text is rendered separately below.
   const svg = `<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
     <defs>
-      <style>${fontFace}</style>
       <linearGradient id="wmbg" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0" stop-color="rgb(6,10,20)" stop-opacity="0.74"/>
         <stop offset="1" stop-color="rgb(2,4,10)" stop-opacity="0.86"/>
@@ -115,21 +125,37 @@ async function applyWatermark(inputBuffer) {
         <stop offset="0.5" stop-color="rgb(56,160,255)" stop-opacity="0.95"/>
         <stop offset="1" stop-color="rgb(0,112,255)" stop-opacity="0"/>
       </linearGradient>
-      <filter id="wmglow" x="-60%" y="-60%" width="220%" height="220%">
-        <feGaussianBlur stdDeviation="${glowStd}"/>
-      </filter>
     </defs>
     <rect x="${boxX}" y="${boxY}" width="${boxW}" height="${boxH}" rx="${radius}" ry="${radius}" fill="url(#wmbg)"/>
     <rect x="${boxX + 0.5}" y="${boxY + 0.5}" width="${boxW - 1}" height="${boxH - 1}" rx="${radius}" ry="${radius}" fill="none" stroke="rgb(255,255,255)" stroke-opacity="0.14" stroke-width="1"/>
     <rect x="${textX - logoW * 0.32}" y="${logoY + logoH + gap * 0.42}" width="${logoW * 0.64}" height="${accentH}" rx="${accentH / 2}" fill="url(#wmaccent)"/>
-    <text x="${textX}" y="${textY}" font-family="${fontFamily}" font-size="${urlFontSize}" font-weight="700" letter-spacing="${letterSpacing}" fill="rgb(56,160,255)" filter="url(#wmglow)" text-anchor="middle">${escapeXml(SITE_URL)}</text>
-    <text x="${textX}" y="${textY}" font-family="${fontFamily}" font-size="${urlFontSize}" font-weight="700" letter-spacing="${letterSpacing}" fill="rgb(255,255,255)" text-anchor="middle">${escapeXml(SITE_URL)}</text>
   </svg>`
+
+  // Render the URL text with the bundled font (reliable everywhere).
+  const urlWhite = await renderText(SITE_URL, {
+    pt: urlFontSize,
+    color: '#ffffff',
+    letterSpacing,
+  })
+  // Soft blue glow = a blurred blue copy composited underneath.
+  const glowBlue = await renderText(SITE_URL, {
+    pt: urlFontSize,
+    color: '#38a0ff',
+    letterSpacing,
+  })
+  const glowBuf = await sharp(glowBlue.buffer).blur(glowStd).png().toBuffer()
+
+  const textTop = Math.round(logoY + logoH + gap)
+  const textLeft = Math.round(textX - urlWhite.width / 2)
+  const glowLeft = Math.round(textX - glowBlue.width / 2)
+  const glowTop = textTop + Math.round((urlWhite.height - glowBlue.height) / 2)
 
   return await img
     .composite([
       { input: Buffer.from(svg), top: 0, left: 0 },
       { input: logoBuf, top: logoY, left: logoX },
+      { input: glowBuf, top: Math.max(0, glowTop), left: Math.max(0, glowLeft) },
+      { input: urlWhite.buffer, top: textTop, left: Math.max(0, textLeft) },
     ])
     .jpeg({ quality: 90 })
     .toBuffer()
