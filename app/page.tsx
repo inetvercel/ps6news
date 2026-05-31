@@ -5,6 +5,7 @@ import Header from '@/components/Header'
 import FeaturedGrid from '@/components/FeaturedGrid'
 import NewsGrid from '@/components/NewsGrid'
 import Sidebar from '@/components/Sidebar'
+import NewsletterSignup from '@/components/NewsletterSignup'
 import Footer from '@/components/Footer'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -245,21 +246,7 @@ export default async function Home() {
             </div>
 
             {/* Newsletter Widget */}
-            <div className="bg-[#111827] border border-[#1F2937] rounded-2xl p-6" style={{boxShadow:'0 0 30px rgba(0,112,209,0.12)'}}>
-              <div className="flex items-center gap-2 mb-1">
-                <div className="w-2 h-2 rounded-full bg-[#3BA3FF]" style={{boxShadow:'0 0 8px rgba(59,163,255,0.8)'}} />
-                <h3 className="text-sm font-bold text-[#3BA3FF] uppercase tracking-widest">Stay Updated</h3>
-              </div>
-              <p className="text-[#9CA3AF] text-sm mb-4 mt-2">Get the latest PS6 news delivered to your inbox</p>
-              <input 
-                type="email" 
-                placeholder="Your email"
-                className="w-full px-4 py-2.5 rounded-lg bg-[#0B0F1A] border border-[#1F2937] text-white placeholder-[#4B5563] mb-3 focus:outline-none focus:border-[#3BA3FF] focus:ring-1 focus:ring-[#3BA3FF]/30 transition-all"
-              />
-              <button className="w-full bg-[#0070D1] hover:bg-[#0060BB] text-white font-bold py-2.5 rounded-lg transition-colors" style={{boxShadow:'0 0 16px rgba(59,163,255,0.3)'}}>
-                Subscribe
-              </button>
-            </div>
+            <NewsletterSignup />
             </div>
           </aside>
         </div>
