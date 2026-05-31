@@ -12,6 +12,7 @@ const guideLinks = [
   { href: "/ps6-specs", label: "Specs & Hardware" },
   { href: "/ps6-cost", label: "Price" },
   { href: "/what-will-the-ps6-look-like", label: "Design & Concept" },
+  { href: "/ps6-controller", label: "Controller" },
   { href: "/ps6-disc-drive", label: "Disc Drive" },
   { href: "/how-to-prepare-for-the-ps6-launch", label: "How to Prepare" },
   { href: "/is-the-ps6-coming-soon", label: "Is PS6 Coming Soon?" },
