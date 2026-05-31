@@ -13,6 +13,7 @@ const { createClient } = require('@sanity/client')
 const OpenAI = require('openai').default || require('openai')
 const axios = require('axios')
 const { detectCategorySlug } = require('./lib/categorize')
+const { applyWatermark } = require('./lib/watermark-buffer')
 
 // ── Clients ──────────────────────────────────────────────────────────────────
 
@@ -186,10 +187,25 @@ async function uploadImageToSanity(imageUrl) {
       headers: AXIOS_HEADERS,
     })
     const buffer = Buffer.from(res.data)
-    const contentType = res.headers['content-type'] || 'image/jpeg'
-    const ext = contentType.split('/')[1]?.split(';')[0]?.replace('jpeg', 'jpg') || 'jpg'
-    const asset = await sanity.assets.upload('image', buffer, {
-      filename: `ps6-auto-${Date.now()}.${ext}`,
+
+    // Bake the PS6News watermark into the image (falls back to original on error)
+    let finalBuffer = buffer
+    let filename = `ps6-auto-${Date.now()}.jpg`
+    let contentType = 'image/jpeg'
+    try {
+      finalBuffer = await applyWatermark(buffer)
+      filename = `ps6-auto-watermarked-${Date.now()}.jpg`
+      console.log('   🪧 Watermark applied')
+    } catch (e) {
+      console.warn(`   ⚠️  Watermark failed, using original image: ${e.message}`)
+      const ct = res.headers['content-type'] || 'image/jpeg'
+      contentType = ct
+      const ext = ct.split('/')[1]?.split(';')[0]?.replace('jpeg', 'jpg') || 'jpg'
+      filename = `ps6-auto-${Date.now()}.${ext}`
+    }
+
+    const asset = await sanity.assets.upload('image', finalBuffer, {
+      filename,
       contentType,
     })
     console.log(`   🖼️  Image uploaded: ${asset._id}`)

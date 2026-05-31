@@ -10,7 +10,8 @@
     "studio": "sanity dev --port 3333",
     "studio:deploy": "sanity deploy",
     "import:wordpress": "node scripts/import-wordpress.js",
-    "publish-news": "node scripts/auto-publish.js"
+    "publish-news": "node scripts/auto-publish.js",
+    "watermark-existing": "node scripts/watermark-existing.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
@@ -32,6 +33,7 @@
     "sanity-plugin-media": "^4.1.1",
     "sanity-plugin-table": "^2.3.0",
     "server-only": "^0.0.1",
+    "sharp": "^0.34.5",
     "styled-components": "^6.4.0"
   },
   "devDependencies": {
