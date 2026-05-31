@@ -30,6 +30,7 @@ export default function ArticlePoll({articleId, articleTitle, articleExcerpt}: A
   const [hasVoted, setHasVoted] = useState(false)
   const [selectedOption, setSelectedOption] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [voteError, setVoteError] = useState<string | null>(null)
 
   // Check localStorage for previous vote
   useEffect(() => {
@@ -93,6 +94,7 @@ export default function ArticlePoll({articleId, articleTitle, articleExcerpt}: A
     if (hasVoted || voting || !poll) return
 
     setVoting(true)
+    setVoteError(null)
     try {
       const res = await fetch('/api/poll/vote', {
         method: 'POST',
@@ -100,18 +102,20 @@ export default function ArticlePoll({articleId, articleTitle, articleExcerpt}: A
         body: JSON.stringify({pollId: poll._id, optionKey}),
       })
       const data = await res.json()
-      if (data.poll) {
-        setPoll({
-          ...poll,
-          options: data.poll.options,
-          totalVotes: data.poll.totalVotes,
-        })
-        setHasVoted(true)
-        setSelectedOption(optionKey)
-        localStorage.setItem(`poll-voted-${articleId}`, optionKey)
+      if (!res.ok || !data.poll) {
+        throw new Error(data.error || 'Could not record your vote')
       }
-    } catch (err) {
+      setPoll({
+        ...poll,
+        options: data.poll.options,
+        totalVotes: data.poll.totalVotes,
+      })
+      setHasVoted(true)
+      setSelectedOption(optionKey)
+      localStorage.setItem(`poll-voted-${articleId}`, optionKey)
+    } catch (err: any) {
       console.error('Vote failed:', err)
+      setVoteError(err?.message || 'Something went wrong. Please try again.')
     }
     setVoting(false)
   }
@@ -226,7 +230,9 @@ export default function ArticlePoll({articleId, articleTitle, articleExcerpt}: A
       </div>
 
       {/* Footer */}
-      {!hasVoted && (
+      {voteError ? (
+        <p className="text-xs text-red-400 mt-3">{voteError}</p>
+      ) : !hasVoted && (
         <p className="text-xs text-[#4B5563] mt-3 flex items-center gap-1">
           <Vote className="w-3 h-3" />
           Click an option to vote
