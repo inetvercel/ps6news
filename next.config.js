@@ -1,5 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  experimental: {
+    serverComponentsExternalPackages: ['sharp'],
+    outputFileTracingIncludes: {
+      '/api/watermark': ['./scripts/assets/**'],
+    },
+  },
   images: {
     remotePatterns: [
       {

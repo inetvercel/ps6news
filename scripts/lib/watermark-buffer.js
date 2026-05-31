@@ -30,12 +30,20 @@ async function getLogoBuffer() {
 let fontDataUri = null
 function getFontDataUri() {
   if (fontDataUri) return fontDataUri
-  try {
-    const ttf = fs.readFileSync(path.join(__dirname, '..', 'assets', 'Rajdhani-SemiBold.ttf'))
-    fontDataUri = `data:font/ttf;base64,${ttf.toString('base64')}`
-  } catch {
-    fontDataUri = null
+  const candidates = [
+    path.join(__dirname, '..', 'assets', 'Rajdhani-SemiBold.ttf'),
+    path.join(process.cwd(), 'scripts', 'assets', 'Rajdhani-SemiBold.ttf'),
+  ]
+  for (const p of candidates) {
+    try {
+      const ttf = fs.readFileSync(p)
+      fontDataUri = `data:font/ttf;base64,${ttf.toString('base64')}`
+      return fontDataUri
+    } catch {
+      // try next candidate
+    }
   }
+  fontDataUri = null
   return fontDataUri
 }
 
