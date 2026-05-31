@@ -11,7 +11,8 @@
     "studio:deploy": "sanity deploy",
     "import:wordpress": "node scripts/import-wordpress.js",
     "publish-news": "node scripts/auto-publish.js",
-    "watermark-existing": "node scripts/watermark-existing.js"
+    "watermark-existing": "node scripts/watermark-existing.js",
+    "generate-poll": "node scripts/generate-poll.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
