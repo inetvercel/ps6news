@@ -14,13 +14,24 @@ function clamp(s, max) {
   return s.length > max ? s.slice(0, max - 1).trimEnd() + '…' : s
 }
 
+// Remove any trailing "| PS6News" / "- PS6News.com" style brand suffix(es) so
+// the site's title template can append the brand exactly once.
+function stripBrand(s) {
+  if (!s) return s
+  let out = String(s).trim()
+  const re = /[\s]*[|\-–—:]+\s*ps6\s*news(?:\.com)?\s*$/i
+  while (re.test(out)) out = out.replace(re, '').trim()
+  return out
+}
+
 function buildPrompt({ title, excerpt, body }) {
   return `You are an expert SEO copywriter for "${BRAND}" (ps6news.com), a PlayStation 6 news site.
 Write SEO meta tags for the article below. Follow these rules EXACTLY:
 
 META TITLE:
 - 50-60 characters total (hard limit 60).
-- Put the PRIMARY KEYWORD first, then a value proposition, then the brand last as " | ${BRAND}".
+- Put the PRIMARY KEYWORD first, then a value proposition.
+- Do NOT include the brand name "${BRAND}" or "ps6news" — the site appends it automatically. Adding it causes duplicate branding.
 - Compelling and specific. No clickbait, no quotes.
 
 META DESCRIPTION:
@@ -57,9 +68,9 @@ async function generateSeo(openai, input) {
     throw new Error('AI response missing metaTitle/metaDescription')
   }
   return {
-    metaTitle: clamp(parsed.metaTitle, 65),
+    metaTitle: clamp(stripBrand(parsed.metaTitle), 65),
     metaDescription: clamp(parsed.metaDescription, 165),
   }
 }
 
-module.exports = { generateSeo, buildPrompt }
+module.exports = { generateSeo, buildPrompt, stripBrand }

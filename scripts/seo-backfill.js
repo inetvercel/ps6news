@@ -5,12 +5,13 @@
  *   node scripts/seo-backfill.js              # all articles missing seo
  *   node scripts/seo-backfill.js --force      # regenerate for ALL articles
  *   node scripts/seo-backfill.js <slug>       # a single article by slug
+ *   node scripts/seo-backfill.js --clean      # strip duplicate brand from titles (no AI)
  */
 
 require('dotenv').config({ path: '.env.local' })
 const { createClient } = require('@sanity/client')
 const OpenAI = require('openai').default || require('openai')
-const { generateSeo } = require('./lib/seo')
+const { generateSeo, stripBrand } = require('./lib/seo')
 
 const sanity = createClient({
   projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || 'zzzwo1aw',
@@ -31,13 +32,34 @@ function bodyToText(blocks) {
     .slice(0, 1500)
 }
 
+async function cleanBrand() {
+  const articles = await sanity.fetch(
+    `*[_type == "article" && defined(seo.metaTitle)]{ _id, "slug": slug.current, "metaTitle": seo.metaTitle }`
+  )
+  let cleaned = 0
+  for (const a of articles) {
+    const stripped = stripBrand(a.metaTitle)
+    if (stripped !== a.metaTitle) {
+      await sanity.patch(a._id).set({ 'seo.metaTitle': stripped }).commit()
+      console.log(`  ✂️  ${a.slug}: "${a.metaTitle}" -> "${stripped}"`)
+      cleaned++
+    }
+  }
+  console.log(`\nDone. Cleaned ${cleaned} title(s).\n`)
+}
+
 async function run() {
+  const args = process.argv.slice(2)
+
+  if (args.includes('--clean')) {
+    return cleanBrand()
+  }
+
   if (!process.env.OPENAI_API_KEY) {
     console.error('❌ OPENAI_API_KEY not set')
     process.exit(1)
   }
 
-  const args = process.argv.slice(2)
   const force = args.includes('--force')
   const slug = args.find((a) => !a.startsWith('--'))
 

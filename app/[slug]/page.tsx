@@ -16,6 +16,15 @@ import ArticleEngagementBar from '@/components/ArticleEngagementBar'
 
 export const revalidate = 60
 
+// Remove any trailing "| PS6News" / "- PS6News.com" brand suffix(es) so the
+// layout's title template appends the brand exactly once.
+function stripBrand(s: string): string {
+  let out = (s || '').trim()
+  const re = /[\s]*[|\-–—:]+\s*ps6\s*news(?:\.com)?\s*$/i
+  while (re.test(out)) out = out.replace(re, '').trim()
+  return out
+}
+
 interface Article {
   _id: string
   title: string
@@ -65,11 +74,14 @@ export async function generateMetadata({params}: {params: {slug: string}}): Prom
   const fallbackDesc = article.excerpt
     ? article.excerpt.length > 160 ? article.excerpt.substring(0, 157) + '...' : article.excerpt
     : `Read about ${article.title} on PS6News.com - Your source for PlayStation 6 news and updates.`
-  const metaTitle = article.seo?.metaTitle?.trim() || `${article.title} | PS6News`
+  // Strip any baked-in brand so the layout's "%s | PS6News.com" template (and
+  // OG/Twitter below) add it exactly once — no more "| PS6News | PS6News.com".
+  const baseTitle = stripBrand((article.seo?.metaTitle || article.title || '').trim())
   const metaDescription = article.seo?.metaDescription?.trim() || fallbackDesc
+  const brandedTitle = `${baseTitle} | PS6News.com`
 
   return {
-    title: metaTitle,
+    title: baseTitle,
     description: metaDescription,
     keywords: [
       'PS6', 'PlayStation 6', 'Sony', 'gaming news',
@@ -78,7 +90,7 @@ export async function generateMetadata({params}: {params: {slug: string}}): Prom
     ],
     authors: [{name: article.author?.name || 'PS6News Staff'}],
     openGraph: {
-      title: metaTitle,
+      title: brandedTitle,
       description: metaDescription,
       url,
       siteName: 'PS6News.com',
@@ -90,7 +102,7 @@ export async function generateMetadata({params}: {params: {slug: string}}): Prom
     },
     twitter: {
       card: 'summary_large_image',
-      title: metaTitle,
+      title: brandedTitle,
       description: metaDescription,
       images: [imageUrl],
     },
