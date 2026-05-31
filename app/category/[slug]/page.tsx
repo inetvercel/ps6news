@@ -45,7 +45,16 @@ async function getCategory(slug: string): Promise<Category | null> {
   }`, {slug})
 }
 
-async function getCategoryArticles(categoryId: string): Promise<Article[]> {
+async function getCategoryArticles(categoryId: string, slug: string): Promise<Article[]> {
+  // "News" acts as a general feed of every article, regardless of category.
+  if (slug === 'news') {
+    return client.fetch(groq`*[_type == "article" && !(_id in path("drafts.**"))] | order(publishedAt desc) {
+      _id, title, slug, excerpt, publishedAt,
+      "author": author->name,
+      "category": category->title,
+      mainImage { asset->{ _id, url }, alt }
+    }`)
+  }
   return client.fetch(groq`*[_type == "article" && category._ref == $categoryId] | order(publishedAt desc) {
     _id, title, slug, excerpt, publishedAt,
     "author": author->name,
@@ -67,7 +76,7 @@ export default async function CategoryPage({params}: {params: {slug: string}}) {
   const category = await getCategory(params.slug)
   if (!category) notFound()
 
-  const articles = await getCategoryArticles(category._id)
+  const articles = await getCategoryArticles(category._id, params.slug)
   const featured = articles[0]
   const rest = articles.slice(1)
 
