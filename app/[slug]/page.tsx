@@ -4,6 +4,7 @@ import Link from 'next/link'
 import {notFound} from 'next/navigation'
 import {client} from '@/sanity/lib/client'
 import {articleBySlugQuery, articlesQuery, allSlugsQuery} from '@/sanity/lib/queries'
+import {urlForImage} from '@/sanity/lib/image'
 import {PortableText} from '@portabletext/react'
 import {portableTextComponents} from '@/components/PortableTextComponents'
 import Header from '@/components/Header'
@@ -128,6 +129,7 @@ export default async function ArticlePage({params}: {params: {slug: string}}) {
   )
 
   const imageUrl = article.mainImage?.asset?.url
+    || (article.mainImage?.asset ? urlForImage(article.mainImage as any)?.url() : undefined)
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -217,11 +219,11 @@ export default async function ArticlePage({params}: {params: {slug: string}}) {
                 </div>
               </div>
 
-              {article.mainImage?.asset?.url && (
+              {imageUrl && (
                 <div className="mb-8 px-6">
                   <Image
-                    src={article.mainImage.asset.url}
-                    alt={article.mainImage.alt || article.title}
+                    src={imageUrl}
+                    alt={article.mainImage?.alt || article.title}
                     width={900}
                     height={506}
                     className="w-full rounded-[10px]"

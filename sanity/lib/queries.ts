@@ -48,6 +48,7 @@ export const articleBySlugQuery = groq`*[_type == "article" && slug.current == $
   mainImage {
     asset->{
       _id,
+      _ref,
       url
     },
     alt

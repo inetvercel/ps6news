@@ -85,6 +85,15 @@ export const portableTextComponents: PortableTextComponents = {
     youtube: ({value}: any) => {
       return <YouTubeEmbed url={value.url} />
     },
+    htmlEmbed: ({value}: any) => {
+      if (!value?.html) return null
+      return (
+        <div
+          className="my-6"
+          dangerouslySetInnerHTML={{__html: value.html}}
+        />
+      )
+    },
     keyTakeaways: ({value}: any) => {
       return <KeyTakeaways items={value?.items || []} />
     },
