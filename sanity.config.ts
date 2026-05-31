@@ -9,7 +9,7 @@ const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET || 'production'
 
 export default defineConfig({
   name: 'default',
-  title: 'PS6News CMS',
+  title: 'PS6News CMS', // v2
   projectId,
   dataset,
   basePath: '/studio',
