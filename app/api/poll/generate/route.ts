@@ -2,6 +2,8 @@ import {NextRequest, NextResponse} from 'next/server'
 import {createClient} from '@sanity/client'
 import OpenAI from 'openai'
 
+export const dynamic = 'force-dynamic'
+
 const sanityClient = createClient({
   projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
   dataset: process.env.NEXT_PUBLIC_SANITY_DATASET || 'production',
@@ -10,8 +12,6 @@ const sanityClient = createClient({
   useCdn: false,
 })
 
-const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY})
-
 export async function POST(request: NextRequest) {
   try {
     const {articleId, title, excerpt} = await request.json()
@@ -19,6 +19,11 @@ export async function POST(request: NextRequest) {
     if (!articleId || !title) {
       return NextResponse.json({error: 'articleId and title are required'}, {status: 400})
     }
+
+    if (!process.env.OPENAI_API_KEY) {
+      return NextResponse.json({error: 'OPENAI_API_KEY not configured'}, {status: 500})
+    }
+    const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY})
 
     // Check if poll already exists for this article
     const existing = await sanityClient.fetch(

@@ -1,7 +1,7 @@
 import {NextRequest, NextResponse} from 'next/server'
 import {Resend} from 'resend'
 
-const resend = new Resend(process.env.RESEND)
+export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,6 +10,11 @@ export async function POST(request: NextRequest) {
     if (!name || !email || !message) {
       return NextResponse.json({error: 'Missing required fields'}, {status: 400})
     }
+
+    if (!process.env.RESEND) {
+      return NextResponse.json({error: 'Email service not configured'}, {status: 500})
+    }
+    const resend = new Resend(process.env.RESEND)
 
     await resend.emails.send({
       from: 'PS6News.com <onboarding@resend.dev>',
