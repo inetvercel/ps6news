@@ -11,7 +11,7 @@ const TAGS = [
   { label: '📰 PS6 News',          href: '/category/news' },
   { label: '🕵️ PS6 Leaks',         href: '/ps6-early-specs-leak-amd-power-promises-8k-gaming-at-60-fps' },
   { label: '🎨 PS6 Design',        href: '/what-will-the-ps6-look-like' },
-  { label: '🎮 PS6 Controller',    href: '/what-will-the-ps6-look-like' },
+  { label: '🎮 PS6 Controller',    href: '/ps6-controller' },
   { label: '📅 PS6 Launch Date',   href: '/ps6-release-date' },
   { label: '💡 PS6 Concept',       href: '/what-will-the-ps6-look-like' },
 ]
