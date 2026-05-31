@@ -23,7 +23,7 @@ export function WatermarkImageInput(props: ObjectInputProps) {
   const watermark: boolean = !!v.watermark
   const watermarkApplied: boolean = !!v.watermarkApplied
   const assetRef: string | undefined = v.asset?._ref
-  const originalAssetRef: string | undefined = v.originalAsset?._ref
+  const originalAssetRef: string | undefined = v.originalAssetId
 
   useEffect(() => {
     let cancelled = false
@@ -47,7 +47,7 @@ export function WatermarkImageInput(props: ObjectInputProps) {
           if (cancelled) return
 
           onChange([
-            set({_type: 'reference', _ref: assetRef}, ['originalAsset']),
+            set(assetRef, ['originalAssetId']),
             set({_type: 'reference', _ref: uploaded._id}, ['asset']),
             set(true, ['watermarkApplied']),
           ])
@@ -69,7 +69,7 @@ export function WatermarkImageInput(props: ObjectInputProps) {
         try {
           onChange([
             set({_type: 'reference', _ref: originalAssetRef}, ['asset']),
-            unset(['originalAsset']),
+            unset(['originalAssetId']),
             set(false, ['watermarkApplied']),
           ])
           setStatus('idle')

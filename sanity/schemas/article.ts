@@ -10,13 +10,7 @@ const watermarkFields = [
     initialValue: false,
   },
   {name: 'watermarkApplied', type: 'boolean', hidden: true, readOnly: true},
-  {
-    name: 'originalAsset',
-    type: 'reference',
-    to: [{type: 'sanity.imageAsset'}],
-    hidden: true,
-    readOnly: true,
-  },
+  {name: 'originalAssetId', type: 'string', hidden: true, readOnly: true},
 ]
 
 export default defineType({
