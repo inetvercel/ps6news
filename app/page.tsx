@@ -48,8 +48,26 @@ async function getArticles() {
   }
 }
 
+async function getGuideImages() {
+  try {
+    const slugs = guidePages.map((g) => g.href.replace(/^\//, ''))
+    const rows = await client.fetch(
+      `*[_type == "article" && slug.current in $slugs]{ "slug": slug.current, "url": mainImage.asset->url }`,
+      {slugs},
+      {next: {revalidate: 300, tags: ['articles']}}
+    )
+    const map: Record<string, string> = {}
+    for (const r of rows) if (r.url) map[r.slug] = r.url
+    return map
+  } catch (error) {
+    console.error('Error fetching guide images:', error)
+    return {}
+  }
+}
+
 export default async function Home() {
   const articles = await getArticles()
+  const guideImages = await getGuideImages()
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -320,23 +338,39 @@ export default async function Home() {
           </p>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {guidePages.map(({href, title, desc, Icon}) => (
-            <Link
-              key={href}
-              href={href}
-              className="group bg-[#111827] border border-[#1F2937] rounded-2xl p-5 hover:border-[#3BA3FF]/40 transition-all flex flex-col"
-              style={{boxShadow: '0 0 24px rgba(0,112,209,0.06)'}}
-            >
-              <div className="w-11 h-11 rounded-xl bg-[#0070D1]/15 border border-[#3BA3FF]/20 flex items-center justify-center mb-3 group-hover:bg-[#0070D1]/25 transition-colors">
-                <Icon className="w-5 h-5 text-[#3BA3FF]" />
-              </div>
-              <h3 className="font-bold text-white group-hover:text-[#3BA3FF] transition-colors">{title}</h3>
-              <p className="text-xs text-[#9CA3AF] mt-1 line-clamp-2">{desc}</p>
-              <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#3BA3FF] mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                Explore <ChevronRight className="w-3 h-3" />
-              </span>
-            </Link>
-          ))}
+          {guidePages.map(({href, title, desc, Icon}) => {
+            const bg = guideImages[href.replace(/^\//, '')]
+            return (
+              <Link
+                key={href}
+                href={href}
+                className="group relative overflow-hidden bg-[#111827] border border-[#1F2937] rounded-2xl p-5 hover:border-[#3BA3FF]/40 transition-all flex flex-col"
+                style={{boxShadow: '0 0 24px rgba(0,112,209,0.06)'}}
+              >
+                {bg && (
+                  <Image
+                    src={bg}
+                    alt=""
+                    fill
+                    className="object-cover opacity-100 group-hover:scale-105 transition-transform duration-500"
+                  />
+                )}
+                {/* Dark overlay for readability */}
+                <div className={`absolute inset-0 ${bg ? 'bg-gradient-to-t from-[#0B0F1A] via-[#0B0F1A]/90 to-[#0B0F1A]/75 group-hover:to-[#0B0F1A]/60' : ''} transition-colors`} />
+
+                <div className="relative flex flex-col h-full">
+                  <div className="w-11 h-11 rounded-xl bg-[#0070D1]/25 border border-[#3BA3FF]/30 backdrop-blur-sm flex items-center justify-center mb-3 group-hover:bg-[#0070D1]/40 transition-colors">
+                    <Icon className="w-5 h-5 text-[#3BA3FF]" />
+                  </div>
+                  <h3 className="font-bold text-white group-hover:text-[#3BA3FF] transition-colors drop-shadow">{title}</h3>
+                  <p className="text-xs text-[#D1D5DB] mt-1 line-clamp-2 drop-shadow">{desc}</p>
+                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#3BA3FF] mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                    Explore <ChevronRight className="w-3 h-3" />
+                  </span>
+                </div>
+              </Link>
+            )
+          })}
         </div>
       </section>
 
