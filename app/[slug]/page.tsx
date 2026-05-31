@@ -3,7 +3,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import {notFound} from 'next/navigation'
 import {client} from '@/sanity/lib/client'
-import {articleBySlugQuery, articlesQuery} from '@/sanity/lib/queries'
+import {articleBySlugQuery, articlesQuery, allSlugsQuery} from '@/sanity/lib/queries'
 import {PortableText} from '@portabletext/react'
 import {portableTextComponents} from '@/components/PortableTextComponents'
 import Header from '@/components/Header'
@@ -40,9 +40,9 @@ interface Article {
 }
 
 export async function generateStaticParams() {
-  const articles = await client.fetch(articlesQuery, {}, {next: {revalidate: 3600}})
-  return articles.map((article: Article) => ({
-    slug: article.slug.current,
+  const articles = await client.fetch(allSlugsQuery, {}, {next: {revalidate: 3600}})
+  return articles.filter((a: {slug: string | null}) => a.slug).map((a: {slug: string}) => ({
+    slug: a.slug,
   }))
 }
 

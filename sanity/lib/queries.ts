@@ -1,5 +1,7 @@
 import {groq} from 'next-sanity'
 
+export const allSlugsQuery = groq`*[_type == "article"] { "slug": slug.current }`
+
 export const articlesQuery = groq`*[_type == "article"] | order(publishedAt desc) [0...20] {
   _id,
   title,

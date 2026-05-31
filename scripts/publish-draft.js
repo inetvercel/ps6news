@@ -10,17 +10,14 @@ const sanity = createClient({
 })
 
 async function run() {
-  // Get the published coming-soon article and check/fix its slug
-  const articles = await sanity.fetch(`*[_type == "article" && slug.current match "is-the-ps6*"] { _id, title, "slug": slug.current }`)
-  console.log('Matching articles:', articles)
+  const articles = await sanity.fetch(`*[_type == "article" && slug.current match "is-the-ps6*"] { _id, title, "slug": slug.current, publishedAt, _createdAt }`)
+  console.log('Article:', JSON.stringify(articles, null, 2))
 
   for (const article of articles) {
-    if (article.slug && article.slug !== 'is-the-ps6-coming-soon') {
-      console.log(`Fixing slug: "${article.slug}" → "is-the-ps6-coming-soon"`)
-      await sanity.patch(article._id).set({ 'slug.current': 'is-the-ps6-coming-soon' }).commit()
-      console.log('✅ Slug fixed')
-    } else {
-      console.log('Slug is already correct:', article.slug)
+    if (!article.publishedAt) {
+      console.log('Missing publishedAt — fixing...')
+      await sanity.patch(article._id).set({ publishedAt: article._createdAt || new Date().toISOString() }).commit()
+      console.log('✅ publishedAt set')
     }
   }
 }
