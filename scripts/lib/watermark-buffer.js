@@ -7,6 +7,8 @@
  * the backfill script for existing images.
  */
 
+const fs = require('fs')
+const path = require('path')
 const axios = require('axios')
 const sharp = require('sharp')
 
@@ -21,6 +23,20 @@ async function getLogoBuffer() {
   const res = await axios.get(LOGO_URL, { responseType: 'arraybuffer', timeout: 15000 })
   logoCache = Buffer.from(res.data)
   return logoCache
+}
+
+// Embed the font directly in the SVG so rendering is identical on every
+// platform (Windows dev + Linux CI) and never depends on system fonts.
+let fontDataUri = null
+function getFontDataUri() {
+  if (fontDataUri) return fontDataUri
+  try {
+    const ttf = fs.readFileSync(path.join(__dirname, '..', 'assets', 'Rajdhani-SemiBold.ttf'))
+    fontDataUri = `data:font/ttf;base64,${ttf.toString('base64')}`
+  } catch {
+    fontDataUri = null
+  }
+  return fontDataUri
 }
 
 function escapeXml(s) {
@@ -44,21 +60,23 @@ async function applyWatermark(inputBuffer) {
 
   // Geometry (scaled to image width so it looks right at any size)
   const margin = Math.round(W * 0.025)
-  const logoW = Math.min(Math.round(W * 0.24), 460)
+  const logoW = Math.min(Math.round(W * 0.2), 380)
   const logoH = Math.round(logoW * LOGO_ASPECT)
-  const urlFontSize = Math.max(Math.round(logoW * 0.135), 12)
-  const gap = Math.round(logoH * 0.38)
-  const boxPadX = Math.round(logoW * 0.1)
-  const boxPadY = Math.round(logoH * 0.55)
+  const urlFontSize = Math.max(Math.round(logoW * 0.085), 11)
+  const letterSpacing = Math.max(urlFontSize * 0.18, 1)
+  const gap = Math.round(logoH * 0.5)
+  const boxPadX = Math.round(logoW * 0.11)
+  const boxPadY = Math.round(logoH * 0.6)
   const boxW = logoW + boxPadX * 2
   const boxH = logoH + gap + urlFontSize + boxPadY * 2
   const boxX = Math.max(0, W - margin - boxW)
   const boxY = Math.max(0, H - margin - boxH)
   const logoX = boxX + boxPadX
   const logoY = boxY + boxPadY
-  const radius = Math.round(boxH * 0.18)
+  const radius = Math.round(boxH * 0.16)
   const textX = logoX + logoW / 2
   const textY = logoY + logoH + gap + urlFontSize // SVG text y is the baseline
+  const accentH = Math.max(Math.round(boxH * 0.05), 2)
 
   // Resize the logo to fit
   const logoBuf = await sharp(await getLogoBuffer())
@@ -66,10 +84,31 @@ async function applyWatermark(inputBuffer) {
     .png()
     .toBuffer()
 
-  // Backdrop + URL text as an SVG overlay
+  const font = getFontDataUri()
+  const fontFace = font
+    ? `@font-face { font-family: 'PS6'; src: url('${font}') format('truetype'); }`
+    : ''
+  const fontFamily = font ? 'PS6, Arial, sans-serif' : 'Arial, Helvetica, sans-serif'
+
+  // Backdrop + URL text as an SVG overlay. Darker glassy gradient, a soft
+  // inner border, and a thin PlayStation-blue accent under the logo.
   const svg = `<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
-    <rect x="${boxX}" y="${boxY}" width="${boxW}" height="${boxH}" rx="${radius}" ry="${radius}" fill="rgb(8,12,22)" fill-opacity="0.42"/>
-    <text x="${textX}" y="${textY}" font-family="Arial, Helvetica, sans-serif" font-size="${urlFontSize}" font-weight="600" fill="rgb(255,255,255)" fill-opacity="0.95" text-anchor="middle">${escapeXml(SITE_URL)}</text>
+    <defs>
+      <style>${fontFace}</style>
+      <linearGradient id="wmbg" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="rgb(6,10,20)" stop-opacity="0.74"/>
+        <stop offset="1" stop-color="rgb(2,4,10)" stop-opacity="0.86"/>
+      </linearGradient>
+      <linearGradient id="wmaccent" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="rgb(0,112,255)" stop-opacity="0"/>
+        <stop offset="0.5" stop-color="rgb(56,160,255)" stop-opacity="0.95"/>
+        <stop offset="1" stop-color="rgb(0,112,255)" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    <rect x="${boxX}" y="${boxY}" width="${boxW}" height="${boxH}" rx="${radius}" ry="${radius}" fill="url(#wmbg)"/>
+    <rect x="${boxX + 0.5}" y="${boxY + 0.5}" width="${boxW - 1}" height="${boxH - 1}" rx="${radius}" ry="${radius}" fill="none" stroke="rgb(255,255,255)" stroke-opacity="0.14" stroke-width="1"/>
+    <rect x="${textX - logoW * 0.32}" y="${logoY + logoH + gap * 0.42}" width="${logoW * 0.64}" height="${accentH}" rx="${accentH / 2}" fill="url(#wmaccent)"/>
+    <text x="${textX}" y="${textY}" font-family="${fontFamily}" font-size="${urlFontSize}" font-weight="600" letter-spacing="${letterSpacing}" fill="rgb(235,242,255)" fill-opacity="0.92" text-anchor="middle">${escapeXml(SITE_URL)}</text>
   </svg>`
 
   return await img
