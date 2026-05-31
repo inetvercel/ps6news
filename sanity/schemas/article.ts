@@ -1,17 +1,5 @@
 import {defineField, defineType} from 'sanity'
-import {WatermarkImageInput} from '../components/WatermarkImageInput'
-
-const watermarkFields = [
-  {
-    name: 'watermark',
-    type: 'boolean',
-    title: 'Apply PS6News watermark',
-    description: 'Burns the PS6News logo + ps6news.com onto the image. Untick to restore the original.',
-    initialValue: false,
-  },
-  {name: 'watermarkApplied', type: 'boolean', hidden: true, readOnly: true},
-  {name: 'originalAssetId', type: 'string', hidden: true, readOnly: true},
-]
+import {SeoInput} from '../components/SeoInput'
 
 export default defineType({
   name: 'article',
@@ -47,14 +35,12 @@ export default defineType({
       options: {
         hotspot: true
       },
-      components: {input: WatermarkImageInput},
       fields: [
         {
           name: 'alt',
           type: 'string',
           title: 'Alternative text'
         },
-        ...watermarkFields,
       ]
     }),
     defineField({
@@ -75,6 +61,30 @@ export default defineType({
       type: 'text',
       rows: 3,
       validation: Rule => Rule.max(200)
+    }),
+    defineField({
+      name: 'seo',
+      title: 'SEO / Meta Tags',
+      type: 'object',
+      description: 'Search engine title & description. Use "Generate with AI" for an optimised one.',
+      components: {input: SeoInput},
+      fields: [
+        {
+          name: 'metaTitle',
+          title: 'Meta Title',
+          type: 'string',
+          description: '50–60 chars. Primary keyword first, value proposition, brand last.',
+          validation: (Rule: any) => Rule.max(70).warning('Keep under ~60 characters for best results.'),
+        },
+        {
+          name: 'metaDescription',
+          title: 'Meta Description',
+          type: 'text',
+          rows: 3,
+          description: '150–160 chars. Keyword-rich summary with an emotional hook or CTA.',
+          validation: (Rule: any) => Rule.max(170).warning('Keep under ~160 characters for best results.'),
+        },
+      ],
     }),
     defineField({
       name: 'body',
@@ -134,11 +144,9 @@ export default defineType({
         {
           type: 'image',
           options: { hotspot: true },
-          components: {input: WatermarkImageInput},
           fields: [
             { name: 'alt', type: 'string', title: 'Alternative text' },
             { name: 'caption', type: 'string', title: 'Caption' },
-            ...watermarkFields,
           ]
         },
         { type: 'youtube' },

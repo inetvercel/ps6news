@@ -1,17 +1,4 @@
 import {defineType, defineField} from 'sanity'
-import {WatermarkImageInput} from '../components/WatermarkImageInput'
-
-const watermarkFields = [
-  {
-    name: 'watermark',
-    type: 'boolean',
-    title: 'Apply PS6News watermark',
-    description: 'Burns the PS6News logo + ps6news.com onto the image. Untick to restore the original.',
-    initialValue: false,
-  },
-  {name: 'watermarkApplied', type: 'boolean', hidden: true, readOnly: true},
-  {name: 'originalAssetId', type: 'string', hidden: true, readOnly: true},
-]
 
 export default defineType({
   name: 'imageSlider',
@@ -32,11 +19,9 @@ export default defineType({
         {
           type: 'image',
           options: {hotspot: true},
-          components: {input: WatermarkImageInput},
           fields: [
             {name: 'alt', type: 'string', title: 'Alternative text'},
             {name: 'caption', type: 'string', title: 'Caption'},
-            ...watermarkFields,
           ],
         },
       ],

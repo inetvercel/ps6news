@@ -13,7 +13,8 @@
     "publish-news": "node scripts/auto-publish.js",
     "watermark-existing": "node scripts/watermark-existing.js",
     "generate-poll": "node scripts/generate-poll.js",
-    "export-subscribers": "node scripts/export-subscribers.js"
+    "export-subscribers": "node scripts/export-subscribers.js",
+    "seo-backfill": "node scripts/seo-backfill.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

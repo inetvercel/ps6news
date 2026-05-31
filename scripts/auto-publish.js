@@ -14,6 +14,7 @@ const OpenAI = require('openai').default || require('openai')
 const axios = require('axios')
 const { detectCategorySlug } = require('./lib/categorize')
 const { applyWatermark } = require('./lib/watermark-buffer')
+const { generateSeo } = require('./lib/seo')
 
 // ── Clients ──────────────────────────────────────────────────────────────────
 
@@ -431,6 +432,22 @@ async function publishToSanity(data, authorId, categoryId, imageAssetId, existin
     body,
     publishedAt: new Date().toISOString(),
     featured: false,
+  }
+
+  // Auto-generate SEO meta tags following the title/description rules.
+  try {
+    const bodyText = `${data.excerpt || ''} ${(data.sections || [])
+      .map((s) => `${s.heading || ''} ${(s.paragraphs || []).join(' ')}`)
+      .join(' ')} ${(data.body || []).join(' ')}`
+    const seo = await generateSeo(openai, {
+      title: data.title,
+      excerpt: data.excerpt,
+      body: bodyText,
+    })
+    doc.seo = seo
+    console.log(`   🔎 SEO: ${seo.metaTitle}`)
+  } catch (e) {
+    console.warn(`   ⚠️  SEO generation skipped: ${e.message}`)
   }
 
   if (authorId) doc.author = { _type: 'reference', _ref: authorId }

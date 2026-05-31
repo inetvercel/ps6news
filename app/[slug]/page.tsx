@@ -21,6 +21,10 @@ interface Article {
   title: string
   slug: {current: string}
   excerpt: string
+  seo?: {
+    metaTitle?: string
+    metaDescription?: string
+  }
   body: any[]
   publishedAt: string
   updatedAt?: string
@@ -57,11 +61,16 @@ export async function generateMetadata({params}: {params: {slug: string}}): Prom
   const imageUrl = article.mainImage?.asset?.url || 'https://ps6news.com/og-image.jpg'
   const url = `https://ps6news.com/${params.slug}`
 
+  // Prefer the curated/AI-generated SEO fields; fall back to title/excerpt.
+  const fallbackDesc = article.excerpt
+    ? article.excerpt.length > 160 ? article.excerpt.substring(0, 157) + '...' : article.excerpt
+    : `Read about ${article.title} on PS6News.com - Your source for PlayStation 6 news and updates.`
+  const metaTitle = article.seo?.metaTitle?.trim() || `${article.title} | PS6News`
+  const metaDescription = article.seo?.metaDescription?.trim() || fallbackDesc
+
   return {
-    title: article.title,
-    description: article.excerpt
-      ? article.excerpt.length > 160 ? article.excerpt.substring(0, 157) + '...' : article.excerpt
-      : `Read about ${article.title} on PS6News.com - Your source for PlayStation 6 news and updates.`,
+    title: metaTitle,
+    description: metaDescription,
     keywords: [
       'PS6', 'PlayStation 6', 'Sony', 'gaming news',
       article.category?.title || 'news',
@@ -69,10 +78,8 @@ export async function generateMetadata({params}: {params: {slug: string}}): Prom
     ],
     authors: [{name: article.author?.name || 'PS6News Staff'}],
     openGraph: {
-      title: article.title,
-      description: article.excerpt
-        ? article.excerpt.length > 160 ? article.excerpt.substring(0, 157) + '...' : article.excerpt
-        : `Read about ${article.title} on PS6News.com`,
+      title: metaTitle,
+      description: metaDescription,
       url,
       siteName: 'PS6News.com',
       images: [{url: imageUrl, width: 1200, height: 630, alt: article.mainImage?.alt || article.title}],
@@ -83,10 +90,8 @@ export async function generateMetadata({params}: {params: {slug: string}}): Prom
     },
     twitter: {
       card: 'summary_large_image',
-      title: article.title,
-      description: article.excerpt
-        ? article.excerpt.length > 160 ? article.excerpt.substring(0, 157) + '...' : article.excerpt
-        : `Read about ${article.title} on PS6News.com`,
+      title: metaTitle,
+      description: metaDescription,
       images: [imageUrl],
     },
     alternates: {canonical: url},
