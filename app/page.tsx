@@ -9,11 +9,22 @@ import NewsletterSignup from '@/components/NewsletterSignup'
 import Footer from '@/components/Footer'
 import Link from 'next/link'
 import Image from 'next/image'
-import {Newspaper, TrendingUp, Sparkles, ChevronRight} from 'lucide-react'
+import {Newspaper, TrendingUp, Sparkles, ChevronRight, Calendar, Cpu, DollarSign, Palette, Gamepad2, Disc, Rocket, Clock} from 'lucide-react'
 import dynamic from 'next/dynamic'
 const TrendingWidgets = dynamic(() => import('@/components/TrendingWidgets'), { ssr: false })
 const HotTopics = dynamic(() => import('@/components/HotTopics'), { ssr: false })
 const PS6Tracker = dynamic(() => import('@/components/PS6Tracker'), { ssr: false })
+
+const guidePages = [
+  {href: '/ps6-release-date', title: 'PS6 Release Date', desc: 'When will the PlayStation 6 launch?', Icon: Calendar},
+  {href: '/ps6-specs', title: 'PS6 Specs & Hardware', desc: 'Inside the next-gen power.', Icon: Cpu},
+  {href: '/ps6-cost', title: 'PS6 Price', desc: 'How much will it cost?', Icon: DollarSign},
+  {href: '/what-will-the-ps6-look-like', title: 'PS6 Design & Concept', desc: 'What the PS6 could look like.', Icon: Palette},
+  {href: '/ps6-controller', title: 'PS6 Controller', desc: 'The next DualSense evolution.', Icon: Gamepad2},
+  {href: '/ps6-disc-drive', title: 'PS6 Disc Drive', desc: 'Disc or digital-only?', Icon: Disc},
+  {href: '/how-to-prepare-for-the-ps6-launch', title: 'Prepare for Launch', desc: 'Get ready for day one.', Icon: Rocket},
+  {href: '/is-the-ps6-coming-soon', title: 'Is PS6 Coming Soon?', desc: 'How close are we really?', Icon: Clock},
+]
 
 export const revalidate = 60
 
@@ -218,6 +229,17 @@ export default async function Home() {
               ))}
               </div>
             )}
+
+            {/* Read more news CTA */}
+            <div className="mt-8 flex justify-center">
+              <Link
+                href="/blog"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#0070D1] hover:bg-[#0060BB] text-white font-bold transition-colors"
+                style={{boxShadow: '0 0 18px rgba(59,163,255,0.3)'}}
+              >
+                Read more PS6 news <ChevronRight className="w-4 h-4" />
+              </Link>
+            </div>
           </section>
 
           {/* Sidebar */}
@@ -251,6 +273,38 @@ export default async function Home() {
           </aside>
         </div>
       </div>
+
+      {/* Explore PS6 Guides — main pages as cards */}
+      <section className="container mx-auto px-4 pb-14 max-w-[1350px]">
+        <div className="mb-6">
+          <h2 className="text-2xl font-black text-white flex items-center gap-2">
+            <Sparkles className="w-6 h-6 text-blue-400" />
+            Your Complete PS6 Guide
+          </h2>
+          <p className="text-[#9CA3AF] text-sm mt-1">
+            Everything you need to know about the PlayStation 6 — specs, price, release date, design and more.
+          </p>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {guidePages.map(({href, title, desc, Icon}) => (
+            <Link
+              key={href}
+              href={href}
+              className="group bg-[#111827] border border-[#1F2937] rounded-2xl p-5 hover:border-[#3BA3FF]/40 transition-all flex flex-col"
+              style={{boxShadow: '0 0 24px rgba(0,112,209,0.06)'}}
+            >
+              <div className="w-11 h-11 rounded-xl bg-[#0070D1]/15 border border-[#3BA3FF]/20 flex items-center justify-center mb-3 group-hover:bg-[#0070D1]/25 transition-colors">
+                <Icon className="w-5 h-5 text-[#3BA3FF]" />
+              </div>
+              <h3 className="font-bold text-white group-hover:text-[#3BA3FF] transition-colors">{title}</h3>
+              <p className="text-xs text-[#9CA3AF] mt-1 line-clamp-2">{desc}</p>
+              <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#3BA3FF] mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                Explore <ChevronRight className="w-3 h-3" />
+              </span>
+            </Link>
+          ))}
+        </div>
+      </section>
 
       <Footer />
     </>
