@@ -6,8 +6,10 @@
  * asset filename already indicates a watermark (so it is safe to re-run).
  *
  * Usage:
- *   node scripts/watermark-existing.js          # all articles
+ *   node scripts/watermark-existing.js          # all articles (skips already-watermarked)
  *   node scripts/watermark-existing.js <slug>   # a single article by slug
+ *   node scripts/watermark-existing.js --force  # re-watermark even already-watermarked
+ *                                                 images (use to fix broken watermarks)
  */
 
 require('dotenv').config({ path: '.env.local' })
@@ -24,7 +26,9 @@ const sanity = createClient({
 })
 
 async function run() {
-  const slugArg = process.argv[2]
+  const args = process.argv.slice(2)
+  const force = args.includes('--force')
+  const slugArg = args.find((a) => !a.startsWith('--'))
   const filter = slugArg
     ? `_type == "article" && slug.current == $slug`
     : `_type == "article" && defined(mainImage.asset)`
@@ -51,8 +55,8 @@ async function run() {
       skipped++
       continue
     }
-    if (a.filename && /watermark/i.test(a.filename)) {
-      console.log(`  ⏭️  ${a.slug} — already watermarked`)
+    if (!force && a.filename && /watermark/i.test(a.filename)) {
+      console.log(`  ⏭️  ${a.slug} — already watermarked (use --force to redo)`)
       skipped++
       continue
     }
