@@ -31,19 +31,46 @@ const rssParser = new Parser({ timeout: 10000 })
 const MAX_ARTICLES_PER_RUN = 1
 
 const RSS_FEEDS = [
+  // PS6 / PlayStation direct
   'https://news.google.com/rss/search?q=PlayStation+6+OR+PS6+release&hl=en-GB&gl=GB&ceid=GB:en',
   'https://news.google.com/rss/search?q=PS6+Sony+console&hl=en-GB&gl=GB&ceid=GB:en',
   'https://news.google.com/rss/search?q=Sony+PlayStation+next+gen+2026&hl=en-GB&gl=GB&ceid=GB:en',
+  // Xbox Helix / competitor
+  'https://news.google.com/rss/search?q=Xbox+Project+Helix+OR+Xbox+Helix+console&hl=en-GB&gl=GB&ceid=GB:en',
+  'https://news.google.com/rss/search?q=Xbox+next+gen+console+2026&hl=en-GB&gl=GB&ceid=GB:en',
+  'https://news.google.com/rss/search?q=Nintendo+Switch+2+vs+PlayStation&hl=en-GB&gl=GB&ceid=GB:en',
+  // Sony financials / PS5 lifecycle
+  'https://news.google.com/rss/search?q=Sony+PlayStation+financial+hardware+2026&hl=en-GB&gl=GB&ceid=GB:en',
+  'https://news.google.com/rss/search?q=PS5+price+OR+PS5+Pro+OR+Sony+hardware+2026&hl=en-GB&gl=GB&ceid=GB:en',
+  // Major games
+  'https://news.google.com/rss/search?q=GTA+6+PlayStation+OR+GTA6+PS6&hl=en-GB&gl=GB&ceid=GB:en',
+  'https://news.google.com/rss/search?q=007+First+Light+OR+Naughty+Dog+PS6&hl=en-GB&gl=GB&ceid=GB:en',
+  // Gaming press
   'https://www.videogameschronicle.com/feed/',
   'https://www.eurogamer.net/feed',
-  'https://feeds.feedburner.com/ign/all-articles',
   'https://kotaku.com/rss',
   'https://www.pushsquare.com/feeds/latest',
   'https://www.gamesradar.com/rss/',
   'https://www.theverge.com/rss/index.xml',
 ]
 
-const PS6_KEYWORDS = /\bps6\b|playstation\s?6|next[- ]gen playstation|sony.{0,20}next.{0,10}console|ps6 release|ps6 price|ps6 specs|ps6 launch/i
+// Story type detection — determines AI framing
+const STORY_TYPES = {
+  PS6_DIRECT:   /\bps6\b|playstation\s?6|next[- ]gen playstation|sony.{0,20}next.{0,10}console/i,
+  COMPETITOR:   /xbox.{0,15}helix|project helix|switch\s?2|steam deck/i,
+  SONY_BIZ:     /sony.{0,30}(financial|revenue|profit|invest|hardware|ps5 pro|ps5 price|lifecycle)/i,
+  MAJOR_GAME:   /\bgta\s?6\b|grand theft auto 6|007 first light|naughty dog|insomniac|fromsoftware|next[- ]gen.{0,20}game/i,
+}
+
+function detectStoryType(text) {
+  if (STORY_TYPES.PS6_DIRECT.test(text)) return 'PS6_DIRECT'
+  if (STORY_TYPES.COMPETITOR.test(text)) return 'COMPETITOR'
+  if (STORY_TYPES.SONY_BIZ.test(text)) return 'SONY_BIZ'
+  if (STORY_TYPES.MAJOR_GAME.test(text)) return 'MAJOR_GAME'
+  return null
+}
+
+const PS6_KEYWORDS = /\bps6\b|playstation\s?6|next[- ]gen playstation|sony.{0,20}next.{0,10}console|xbox.{0,15}helix|project helix|switch\s?2.{0,20}(vs|playstation)|sony.{0,30}(financial|ps5 pro|hardware)|\bgta\s?6\b|007 first light/i
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -231,16 +258,27 @@ async function fetchPS6NewsItems() {
 
 // ── Gemini Rewriter ───────────────────────────────────────────────────────────
 
-async function rewriteWithGemini(title, description, link, existingArticles = []) {
+async function rewriteWithGemini(title, description, link, existingArticles = [], storyType = 'PS6_DIRECT') {
   console.log('   🌐 Fetching full article...')
   const fullContent = link ? await fetchArticleContent(link) : null
   const sourceText = fullContent || description || 'No content available'
   const contentLabel = fullContent ? 'FULL ARTICLE TEXT' : 'SUMMARY (full article unavailable)'
 
-  console.log(`   📄 Source: ${fullContent ? fullContent.length + ' chars fetched' : 'using RSS snippet only'}`)
+  console.log(`   📄 Source: ${fullContent ? fullContent.length + ' chars fetched' : 'using RSS snippet only'} | Type: ${storyType}`)
 
   const articlesContext = existingArticles.length
     ? `\n\nEXISTING PS6NEWS ARTICLES — for natural internal links only:\n${existingArticles.slice(0, 15).map(a => `- "${a.title}" → slug: ${a.slug}`).join('\n')}\nIf a topic in your article genuinely relates to one of these, you may wrap the anchor text like this: [[LINK:slug|anchor text]] — once or twice max, only where it reads naturally. Never force it.`
+    : ''
+
+  // PS6 angle instruction varies by story type
+  const ps6AngleInstruction = storyType === 'PS6_DIRECT'
+    ? ''
+    : storyType === 'COMPETITOR'
+    ? `\n9. REQUIRED FINAL SECTION — "What This Means for PS6": Write a dedicated closing section (heading: "What This Means for PS6") comparing or contrasting this news with what we know about PS6. Discuss how PS6 stacks up, what Sony may need to do in response, or why PS6 fans should care. Base speculation only on publicly known PS6 information — do not invent specs or dates.`
+    : storyType === 'SONY_BIZ'
+    ? `\n9. REQUIRED FINAL SECTION — "PS6 Implications": Write a dedicated closing section (heading: "PS6 Implications") analysing what this Sony business news means for the PS6 — pricing, timeline, development priorities, or launch strategy. Clearly label any speculation as such.`
+    : storyType === 'MAJOR_GAME'
+    ? `\n9. REQUIRED FINAL SECTION — "PS6 and the Future of [Game]": Write a dedicated closing section discussing how this game fits into the PS6 era — performance expectations, next-gen potential, or what PS6 hardware could mean for the franchise. Clearly label any speculation.`
     : ''
 
   const prompt = `You are a senior gaming journalist writing for PS6News.com. The current year is 2026. Write a full, professional news article — minimum 600 words — in the style of IGN, Eurogamer or The Verge.
@@ -253,7 +291,7 @@ STRICT RULES:
 5. Structure the article properly: strong intro hook, developed body with subheadings, solid closing paragraph.
 6. Each body paragraph must be 60-100 words. Do not write one-liners.
 7. Do NOT repeatedly name the source publication. Mention it ONCE at most, then write as PS6News's own reporting.
-8. Internal links: use [[LINK:slug|anchor text]] syntax sparingly and only where natural.${articlesContext}
+8. Internal links: use [[LINK:slug|anchor text]] syntax sparingly and only where natural.${ps6AngleInstruction}${articlesContext}
 
 ${contentLabel}:
 """
@@ -288,9 +326,9 @@ Respond ONLY with valid JSON (no markdown, no code fences):
       ]
     },
     {
-      "heading": "What to Watch For",
+      "heading": "What This Means for PS6",
       "paragraphs": [
-        "Closing paragraph (60-90 words): what happens next, what to look out for — based only on the source."
+        "Closing PS6-focused paragraph (60-90 words): how this story connects to the PS6 — competitor context, Sony strategy, or next-gen implications."
       ]
     }
   ],
@@ -428,8 +466,9 @@ async function run() {
         continue
       }
 
-      console.log('   ✍️  Rewriting with GPT-5...')
-      const data = await rewriteWithGemini(item.title, item.description, item.link, existingArticles)
+      const storyType = detectStoryType(`${item.title} ${item.description}`)
+      console.log(`   ✍️  Rewriting with GPT-5... [${storyType}]`)
+      const data = await rewriteWithGemini(item.title, item.description, item.link, existingArticles, storyType)
 
       if (await slugExists(data.slug)) {
         console.log(`   ⏭️  Skipped — slug already exists: /${data.slug}\n`)
