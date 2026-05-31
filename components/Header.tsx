@@ -2,14 +2,19 @@
 
 import {useState, useEffect, useRef} from 'react'
 import {usePathname} from 'next/navigation'
-import {Menu, Gamepad2, Newspaper, TrendingUp, Search, X, Loader2, Megaphone} from 'lucide-react'
+import {Menu, Newspaper, Search, X, Loader2, ChevronDown, BookOpen} from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 
-const navItems = [
-  { href: "/category/announcements", label: "Announcements", icon: Megaphone },
-  { href: "/category/games", label: "Games", icon: Gamepad2 },
-  { href: "/category/rumors-leaks", label: "Rumors & Leaks", icon: TrendingUp },
+// Core content pages shown in the "PS6 Guides" dropdown
+const guideLinks = [
+  { href: "/ps6-release-date", label: "Release Date" },
+  { href: "/ps6-specs", label: "Specs & Hardware" },
+  { href: "/ps6-cost", label: "Price" },
+  { href: "/what-will-the-ps6-look-like", label: "Design & Concept" },
+  { href: "/ps6-disc-drive", label: "Disc Drive" },
+  { href: "/how-to-prepare-for-the-ps6-launch", label: "How to Prepare" },
+  { href: "/is-the-ps6-coming-soon", label: "Is PS6 Coming Soon?" },
 ]
 
 interface SearchResult {
@@ -25,8 +30,10 @@ export default function Header() {
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
+  const [guidesOpen, setGuidesOpen] = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const searchContainerRef = useRef<HTMLDivElement>(null)
+  const guidesRef = useRef<HTMLDivElement>(null)
   const pathname = usePathname()
 
   // Search effect with debounce
@@ -58,6 +65,9 @@ export default function Header() {
       if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
         setSearchResults([])
       }
+      if (guidesRef.current && !guidesRef.current.contains(e.target as Node)) {
+        setGuidesOpen(false)
+      }
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
@@ -69,6 +79,7 @@ export default function Header() {
     setSearchQuery('')
     setSearchResults([])
     setMobileMenuOpen(false)
+    setGuidesOpen(false)
   }, [pathname])
 
   const isActive = (href: string) => {
@@ -95,20 +106,57 @@ export default function Header() {
 
           {/* Desktop Nav - Centered */}
           <nav className="hidden lg:flex items-center justify-center flex-1 gap-1">
-            {navItems.map((item) => (
-              <Link 
-                key={item.href}
-                href={item.href}
+            {/* News tab — all news blogs */}
+            <Link
+              href="/category/news"
+              className={`flex items-center gap-2 px-3 py-1.5 text-sm font-semibold rounded-lg transition-all duration-200 ${
+                isActive('/category/news')
+                  ? 'bg-[#0070D1] text-white shadow-[0_0_14px_rgba(59,163,255,0.4)]'
+                  : 'text-[#9CA3AF] hover:text-white hover:bg-[#1F2937]'
+              }`}
+            >
+              <Newspaper className="h-[18px] w-[18px]" />
+              News
+            </Link>
+
+            {/* PS6 Guides dropdown — core content */}
+            <div ref={guidesRef} className="relative">
+              <button
+                onClick={() => setGuidesOpen(!guidesOpen)}
                 className={`flex items-center gap-2 px-3 py-1.5 text-sm font-semibold rounded-lg transition-all duration-200 ${
-                  isActive(item.href)
-                    ? 'bg-[#0070D1] text-white shadow-[0_0_14px_rgba(59,163,255,0.4)]'
+                  guidesOpen
+                    ? 'bg-[#1F2937] text-white'
                     : 'text-[#9CA3AF] hover:text-white hover:bg-[#1F2937]'
                 }`}
               >
-                <item.icon className="h-[18px] w-[18px]" />
-                {item.label}
-              </Link>
-            ))}
+                <BookOpen className="h-[18px] w-[18px]" />
+                PS6 Guides
+                <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${guidesOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {guidesOpen && (
+                <div
+                  className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-60 bg-[#111827] border border-[#1F2937] rounded-xl overflow-hidden z-50 py-1"
+                  style={{boxShadow:'0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(59,163,255,0.1)'}}
+                >
+                  {guideLinks.map((link) => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={() => setGuidesOpen(false)}
+                      className={`flex items-center justify-between px-4 py-2.5 text-sm transition-colors ${
+                        isActive(link.href)
+                          ? 'text-[#3BA3FF] bg-[#0070D1]/10'
+                          : 'text-[#9CA3AF] hover:text-white hover:bg-[#1F2937]'
+                      }`}
+                    >
+                      <span>{link.label}</span>
+                      <span className="text-[#4B5563]">→</span>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
           </nav>
 
           {/* Right section */}
@@ -205,19 +253,37 @@ export default function Header() {
       {mobileMenuOpen && (
         <div className="lg:hidden bg-[#0B0F1A] border-b border-[#1F2937]">
           <nav className="container mx-auto max-w-[1350px] px-4 py-2 flex flex-col gap-1">
-            {navItems.map((item) => (
+            {/* News */}
+            <Link
+              href="/category/news"
+              onClick={() => setMobileMenuOpen(false)}
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                isActive('/category/news')
+                  ? 'bg-[#0070D1]/20 text-[#3BA3FF]'
+                  : 'text-[#9CA3AF] hover:text-white hover:bg-[#1F2937]'
+              }`}
+            >
+              <Newspaper className="h-5 w-5" />
+              <span className="font-medium">News</span>
+            </Link>
+
+            {/* PS6 Guides section */}
+            <div className="px-4 pt-3 pb-1 text-[11px] font-bold uppercase tracking-widest text-[#4B5563]">
+              PS6 Guides
+            </div>
+            {guideLinks.map((link) => (
               <Link
-                key={item.href}
-                href={item.href}
+                key={link.href}
+                href={link.href}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                  isActive(item.href)
+                className={`flex items-center justify-between px-4 py-2.5 rounded-lg transition-colors ${
+                  isActive(link.href)
                     ? 'bg-[#0070D1]/20 text-[#3BA3FF]'
                     : 'text-[#9CA3AF] hover:text-white hover:bg-[#1F2937]'
                 }`}
               >
-                <item.icon className="h-5 w-5" />
-                <span className="font-medium">{item.label}</span>
+                <span className="font-medium">{link.label}</span>
+                <span className="text-[#4B5563]">→</span>
               </Link>
             ))}
           </nav>
