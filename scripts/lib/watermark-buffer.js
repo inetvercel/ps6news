@@ -14,7 +14,7 @@ const sharp = require('sharp')
 
 const LOGO_URL =
   'https://cdn.sanity.io/images/zzzwo1aw/production/5746ab3938ea01ef12a809d319ef335048f021b7-1255x195.png'
-const SITE_URL = 'ps6news.com'
+const SITE_URL = 'PS6NEWS.COM'
 const LOGO_ASPECT = 195 / 1255 // height / width
 
 let logoCache = null
@@ -62,11 +62,13 @@ async function applyWatermark(inputBuffer) {
   const margin = Math.round(W * 0.025)
   const logoW = Math.min(Math.round(W * 0.2), 380)
   const logoH = Math.round(logoW * LOGO_ASPECT)
-  const urlFontSize = Math.max(Math.round(logoW * 0.085), 11)
-  const letterSpacing = Math.max(urlFontSize * 0.18, 1)
-  const gap = Math.round(logoH * 0.5)
-  const boxPadX = Math.round(logoW * 0.11)
-  const boxPadY = Math.round(logoH * 0.6)
+  // Larger URL (~38% of logo height) for stronger branding / readability.
+  const urlFontSize = Math.max(Math.round(logoH * 0.38), 14)
+  const letterSpacing = Math.max(urlFontSize * 0.1, 1)
+  const gap = Math.round(logoH * 0.34)
+  // Tighter padding so the badge is more compact around the content.
+  const boxPadX = Math.round(logoW * 0.08)
+  const boxPadY = Math.round(logoH * 0.42)
   const boxW = logoW + boxPadX * 2
   const boxH = logoH + gap + urlFontSize + boxPadY * 2
   const boxX = Math.max(0, W - margin - boxW)
@@ -76,7 +78,8 @@ async function applyWatermark(inputBuffer) {
   const radius = Math.round(boxH * 0.16)
   const textX = logoX + logoW / 2
   const textY = logoY + logoH + gap + urlFontSize // SVG text y is the baseline
-  const accentH = Math.max(Math.round(boxH * 0.05), 2)
+  const accentH = Math.max(Math.round(boxH * 0.045), 2)
+  const glowStd = Math.max(urlFontSize * 0.14, 1.5)
 
   // Resize the logo to fit
   const logoBuf = await sharp(await getLogoBuffer())
@@ -104,11 +107,15 @@ async function applyWatermark(inputBuffer) {
         <stop offset="0.5" stop-color="rgb(56,160,255)" stop-opacity="0.95"/>
         <stop offset="1" stop-color="rgb(0,112,255)" stop-opacity="0"/>
       </linearGradient>
+      <filter id="wmglow" x="-60%" y="-60%" width="220%" height="220%">
+        <feGaussianBlur stdDeviation="${glowStd}"/>
+      </filter>
     </defs>
     <rect x="${boxX}" y="${boxY}" width="${boxW}" height="${boxH}" rx="${radius}" ry="${radius}" fill="url(#wmbg)"/>
     <rect x="${boxX + 0.5}" y="${boxY + 0.5}" width="${boxW - 1}" height="${boxH - 1}" rx="${radius}" ry="${radius}" fill="none" stroke="rgb(255,255,255)" stroke-opacity="0.14" stroke-width="1"/>
     <rect x="${textX - logoW * 0.32}" y="${logoY + logoH + gap * 0.42}" width="${logoW * 0.64}" height="${accentH}" rx="${accentH / 2}" fill="url(#wmaccent)"/>
-    <text x="${textX}" y="${textY}" font-family="${fontFamily}" font-size="${urlFontSize}" font-weight="600" letter-spacing="${letterSpacing}" fill="rgb(235,242,255)" fill-opacity="0.92" text-anchor="middle">${escapeXml(SITE_URL)}</text>
+    <text x="${textX}" y="${textY}" font-family="${fontFamily}" font-size="${urlFontSize}" font-weight="700" letter-spacing="${letterSpacing}" fill="rgb(56,160,255)" filter="url(#wmglow)" text-anchor="middle">${escapeXml(SITE_URL)}</text>
+    <text x="${textX}" y="${textY}" font-family="${fontFamily}" font-size="${urlFontSize}" font-weight="700" letter-spacing="${letterSpacing}" fill="rgb(255,255,255)" text-anchor="middle">${escapeXml(SITE_URL)}</text>
   </svg>`
 
   return await img
