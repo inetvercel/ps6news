@@ -30,6 +30,13 @@ export const articleBySlugQuery = groq`*[_type == "article" && slug.current == $
     _type == "image" => {
       ...,
       asset->{ _id, url }
+    },
+    _type == "imageSlider" => {
+      ...,
+      images[]{
+        ...,
+        asset->{ _id, url }
+      }
     }
   },
   publishedAt,

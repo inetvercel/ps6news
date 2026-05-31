@@ -7,5 +7,6 @@ import keyTakeaways from './keyTakeaways'
 import {table, tableRow} from './table'
 import subscriber from './subscriber'
 import {htmlEmbed, youtube} from './embeds'
+import imageSlider from './imageSlider'
 
-export const schemaTypes = [article, page, category, author, poll, keyTakeaways, table, tableRow, subscriber, htmlEmbed, youtube]
+export const schemaTypes = [article, page, category, author, poll, keyTakeaways, table, tableRow, subscriber, htmlEmbed, youtube, imageSlider]

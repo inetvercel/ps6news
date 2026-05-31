@@ -1,5 +1,6 @@
 import {PortableTextComponents} from '@portabletext/react'
 import Image from 'next/image'
+import ImageSlider from './ImageSlider'
 
 function YouTubeEmbed({url}: {url: string}) {
   const getYouTubeId = (url: string) => {
@@ -81,6 +82,17 @@ export const portableTextComponents: PortableTextComponents = {
           )}
         </figure>
       )
+    },
+    imageSlider: ({value}: any) => {
+      const slides = (value?.images || [])
+        .map((img: any) => ({
+          url: img?.asset?.url,
+          alt: img?.alt,
+          caption: img?.caption,
+        }))
+        .filter((s: any) => s.url)
+      if (!slides.length) return null
+      return <ImageSlider title={value?.title} slides={slides} />
     },
     youtube: ({value}: any) => {
       return <YouTubeEmbed url={value.url} />

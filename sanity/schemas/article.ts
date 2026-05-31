@@ -149,6 +149,7 @@ export default defineType({
         },
         { type: 'youtube' },
         { type: 'htmlEmbed' },
+        { type: 'imageSlider' },
         {
           type: 'keyTakeaways'
         },
