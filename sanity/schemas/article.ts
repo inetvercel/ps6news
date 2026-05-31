@@ -65,6 +65,26 @@ export default defineType({
       name: 'body',
       title: 'Body',
       type: 'array',
+      components: {
+        input: undefined, // use default, paste rules applied via options
+      },
+      options: {
+        // Intercept HTML paste — if it contains a <table>, wrap it as an htmlEmbed block
+        pasteHandler: (input: any) => {
+          const {html} = input
+          if (html && /<table[\s>]/i.test(html)) {
+            // Extract just the table(s) from the pasted HTML
+            const tableMatches = html.match(/<table[\s\S]*?<\/table>/gi)
+            if (tableMatches) {
+              return tableMatches.map((tableHtml: string) => ({
+                _type: 'htmlEmbed',
+                html: tableHtml,
+              }))
+            }
+          }
+          return undefined // fall through to default handling
+        },
+      } as any,
       of: [
         {
           type: 'block',

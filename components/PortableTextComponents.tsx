@@ -87,9 +87,11 @@ export const portableTextComponents: PortableTextComponents = {
     },
     htmlEmbed: ({value}: any) => {
       if (!value?.html) return null
+      const isTable = /<table[\s>]/i.test(value.html)
       return (
         <div
-          className="my-6"
+          className={isTable ? 'not-prose my-8 overflow-x-auto rounded-xl' : 'my-6'}
+          style={isTable ? {border:'1px solid rgba(59,163,255,0.18)', boxShadow:'0 0 30px rgba(0,112,209,0.12)'} : undefined}
           dangerouslySetInnerHTML={{__html: value.html}}
         />
       )
