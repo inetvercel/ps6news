@@ -144,20 +144,8 @@ export default defineType({
             { name: 'caption', type: 'string', title: 'Caption' },
           ]
         },
-        {
-          name: 'youtube',
-          type: 'object',
-          title: 'YouTube Video',
-          fields: [{ name: 'url', type: 'url', title: 'YouTube URL' }],
-          preview: { select: { title: 'url' }, prepare: ({ title }: any) => ({ title: 'YouTube: ' + title }) },
-        },
-        {
-          name: 'htmlEmbed',
-          type: 'object',
-          title: 'HTML / Embed',
-          fields: [{ name: 'html', type: 'text', title: 'HTML Code', rows: 6 }],
-          preview: { select: { title: 'html' }, prepare: ({ title }: any) => ({ title: 'HTML Embed: ' + (title || '').substring(0, 60) }) },
-        },
+        { type: 'youtube' },
+        { type: 'htmlEmbed' },
         {
           type: 'keyTakeaways'
         },
