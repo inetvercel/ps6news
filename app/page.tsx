@@ -122,7 +122,7 @@ export default async function Home() {
                 <TrendingUp className="w-6 h-6 text-blue-400" />
                 Latest News
               </h2>
-              <Link href="/blog" className="text-sm font-semibold text-blue-400 hover:text-blue-300 flex items-center gap-1">
+              <Link href="/category/news" className="text-sm font-semibold text-blue-400 hover:text-blue-300 flex items-center gap-1">
                 View All <span>→</span>
               </Link>
             </div>
@@ -227,13 +227,47 @@ export default async function Home() {
                   </div>
                 </Link>
               ))}
+
+              {/* Additional news row */}
+              {articles.slice(6, 9).map((article) => (
+                <Link
+                  key={article._id}
+                  href={`/${article.slug.current}`}
+                  className="group col-span-12 md:col-span-4 bg-[#111827] border border-[#1F2937] rounded-xl overflow-hidden hover:border-[#3BA3FF]/30 transition-all"
+                >
+                  <div className="relative w-full h-40">
+                    {article.mainImage?.asset?.url ? (
+                      <Image
+                        src={article.mainImage.asset.url}
+                        alt={article.title}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-[#1F2937]">
+                        <Newspaper className="w-8 h-8 text-[#374151]" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-4">
+                    {article.category && (
+                      <span className="text-[10px] font-bold text-[#3BA3FF] uppercase tracking-wide">
+                        {article.category}
+                      </span>
+                    )}
+                    <h3 className="font-bold text-white text-sm group-hover:text-[#3BA3FF] transition-colors mt-1 line-clamp-2">
+                      {article.title}
+                    </h3>
+                  </div>
+                </Link>
+              ))}
               </div>
             )}
 
             {/* Read more news CTA */}
             <div className="mt-8 flex justify-center">
               <Link
-                href="/blog"
+                href="/category/news"
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#0070D1] hover:bg-[#0060BB] text-white font-bold transition-colors"
                 style={{boxShadow: '0 0 18px rgba(59,163,255,0.3)'}}
               >
