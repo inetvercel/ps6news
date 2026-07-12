@@ -55,9 +55,9 @@ Respond as JSON only, no markdown:
  * @param {{title:string, excerpt?:string, body?:string}} input
  * @returns {Promise<{metaTitle:string, metaDescription:string}>}
  */
-async function generateSeo(openai, input) {
+async function generateSeo(openai, input, { model = 'gpt-4o-mini' } = {}) {
   const completion = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
+    model,
     messages: [{ role: 'user', content: buildPrompt(input) }],
     response_format: { type: 'json_object' },
     temperature: 0.7,
