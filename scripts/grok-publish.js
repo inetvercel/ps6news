@@ -27,10 +27,11 @@ const { detectCategorySlug } = require('./lib/categorize')
 const { applyWatermark } = require('./lib/watermark-buffer')
 const { generateSeo } = require('./lib/seo')
 
-// ── Grok image model — update here if xAI releases a newer version ───────────
-const GROK_TEXT_MODEL = 'grok-3'
-const GROK_MINI_MODEL = 'grok-3-mini'
-const GROK_IMAGE_MODEL = 'grok-2-image-1212'
+// ── xAI model constants — update here when xAI releases newer versions ─────────
+const GROK_SEARCH_MODEL = 'grok-4.5'        // Responses API (web search)
+const GROK_TEXT_MODEL   = 'grok-3'          // Chat completions (rewrite)
+const GROK_MINI_MODEL   = 'grok-3-mini'     // Chat completions (SEO)
+const GROK_IMAGE_MODEL  = 'grok-2-image-1212' // Image generation
 
 // ── Clients ──────────────────────────────────────────────────────────────────
 
@@ -141,7 +142,7 @@ async function getCategoryMap() {
   return map
 }
 
-// ── Phase 1: Grok live search — discover stories ─────────────────────────────
+// ── Phase 1: Grok Responses API — live web search discovery ─────────────────
 
 async function discoverStories(existingArticles, count) {
   const coveredList = existingArticles
@@ -166,7 +167,7 @@ REQUIREMENTS:
 ALREADY COVERED (skip any story that closely overlaps with these):
 ${coveredList}
 
-Return ONLY valid JSON, no markdown, no code fences:
+Return ONLY a raw JSON object — no markdown, no code fences, nothing before or after the JSON:
 {
   "stories": [
     {
@@ -174,33 +175,55 @@ Return ONLY valid JSON, no markdown, no code fences:
       "sourceUrl": "https://exact-url-to-the-article.com",
       "sourceName": "IGN",
       "publishedAt": "2026-07-12",
-      "summary": "3-5 sentence factual summary of what the article actually says. Quote key details, figures, and claims from the source accurately."
+      "summary": "3-5 sentence factual summary of what the article actually says. Include key details, figures, and claims from the source accurately."
     }
   ]
 }`
 
-  console.log(`\n🔍 Searching for latest PS6 / next-gen news via Grok (live search)...`)
+  console.log(`\n🔍 Searching for latest PS6 / next-gen news via Grok (live web search)...`)
 
-  const response = await grok.chat.completions.create({
-    model: GROK_TEXT_MODEL,
-    messages: [{ role: 'user', content: prompt }],
-    response_format: { type: 'json_object' },
-    search_parameters: {
-      mode: 'on',
-      return_citations: true,
-      max_search_results: 20,
+  // Use the Responses API — the new xAI web search interface
+  const res = await axios.post(
+    'https://api.x.ai/v1/responses',
+    {
+      model: GROK_SEARCH_MODEL,
+      input: [{ role: 'user', content: prompt }],
+      tools: [{ type: 'web_search' }],
     },
-  })
+    {
+      headers: {
+        Authorization: `Bearer ${process.env.XAI_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      timeout: 90000,
+    }
+  )
 
-  let data
-  try {
-    data = JSON.parse(response.choices[0].message.content)
-  } catch {
-    console.warn('   ⚠️  Could not parse Grok discovery response')
+  // Extract text content from the Responses API output
+  const output = res.data?.output || []
+  const message = output.find(o => o.type === 'message')
+  const rawText = (
+    message?.content?.find(c => c.type === 'output_text')?.text ||
+    message?.content?.[0]?.text ||
+    ''
+  ).trim()
+
+  if (!rawText) {
+    console.warn('   ⚠️  Empty response from Grok search')
     return []
   }
 
-  return Array.isArray(data.stories) ? data.stories : []
+  // Strip any accidental markdown fences before parsing
+  const jsonStr = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim()
+
+  try {
+    const parsed = JSON.parse(jsonStr)
+    return Array.isArray(parsed.stories) ? parsed.stories : []
+  } catch {
+    console.warn('   ⚠️  Could not parse Grok response as JSON')
+    console.warn('   Raw (first 300 chars):', rawText.slice(0, 300))
+    return []
+  }
 }
 
 // ── Phase 2: Grok rewrite ─────────────────────────────────────────────────────
