@@ -2,8 +2,8 @@ name: Auto Publish News
 
 on:
   schedule:
-    # Runs every 6 hours: 00:00, 06:00, 12:00, 18:00 UTC
-    - cron: '0 */6 * * *'
+    # Runs twice daily: 09:00 UTC (morning) and 18:00 UTC (evening)
+    - cron: '0 9,18 * * *'
   workflow_dispatch: # Allow manual trigger from GitHub Actions UI
 
 jobs:
