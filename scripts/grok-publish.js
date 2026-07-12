@@ -355,65 +355,179 @@ Respond ONLY with valid JSON (no markdown, no code fences):
   return JSON.parse(response.choices[0].message.content)
 }
 
-// ── Phase 3: Grok image generation + upload ────────────────────────────────
+// ── Phase 3: Smart image strategy ────────────────────────────────────────────
+//
+// GAME articles  → find a real official/press image via Grok web search
+// PS6 / hardware → generate a cinematic AI concept image
+// Fallback        → AI generation if real image search fails
 
-async function generateAndUploadImage(imagePrompt) {
-  console.log('   🎨 Generating AI featured image...')
+// Named games that have real promotional imagery we should use
+const NAMED_GAME_RE = /\b(god of war|laufey|spider[\s-]?man|miles morales|gta\s*6|grand theft auto|horizon|aloy|forbidden west|final fantasy|call of duty|assassin'?s creed|elden ring|sekiro|dark souls|fromsoftware|zelda|mario|halo|forza|elder scrolls|starfield|cyberpunk|wolverine|007|first light|ghost of tsushima|death stranding|last of us|naughty dog|insomniac|santa monica|guerrilla games|bend studio|sucker punch|square enix|capcom|ubisoft|activision|battlefield|resident evil|devil may cry|street fighter|mortal kombat|tekken|persona|yakuza|like a dragon)\b/i
 
-  let imageBuffer
+// PS6 hardware / Sony concepts where AI image makes sense
+const PS6_CONCEPT_RE = /\bps6\b|playstation\s?6|next[- ]gen console|sony hardware|console design|release date|launch price|dualsense|controller|backward compat|console spec|teraflop|gpu|cpu|ram\b/i
 
+const AXIOS_HEADERS = {
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36',
+  'Accept': 'text/html,application/xhtml+xml,*/*',
+}
+
+function isLikelyArticleImage(url) {
+  if (!url) return false
+  const l = url.toLowerCase()
+  if (/logo|icon|favicon|avatar|badge|sprite|placeholder|blank|pixel|tracking/i.test(l)) return false
+  if (!/\.(jpg|jpeg|png|webp)($|\?)|\/images\/|\/uploads\/|\/media\/|\/wp-content\/|\/cdn\//i.test(l)) return false
+  return true
+}
+
+async function fetchOgImage(pageUrl) {
   try {
-    const response = await grok.images.generate({
-      model: GROK_IMAGE_MODEL,
-      prompt: imagePrompt,
-      n: 1,
-    })
-
-    const imgData = response.data?.[0]
-    if (!imgData) throw new Error('Empty image response')
-
-    if (imgData.url) {
-      console.log(`   📥 Downloading generated image...`)
-      const res = await axios.get(imgData.url, { responseType: 'arraybuffer', timeout: 60000 })
-      imageBuffer = Buffer.from(res.data)
-    } else if (imgData.b64_json) {
-      imageBuffer = Buffer.from(imgData.b64_json, 'base64')
-    } else {
-      throw new Error('No image URL or base64 in response')
+    const res = await axios.get(pageUrl, { timeout: 10000, maxRedirects: 5, headers: AXIOS_HEADERS })
+    const html = res.data
+    const patterns = [
+      /<meta[^>]+property="og:image"[^>]+content="([^"]+)"/i,
+      /<meta[^>]+content="([^"]+)"[^>]+property="og:image"/i,
+      /<meta[^>]+name="twitter:image"[^>]+content="([^"]+)"/i,
+      /<meta[^>]+content="([^"]+)"[^>]+name="twitter:image"/i,
+    ]
+    for (const pat of patterns) {
+      const m = html.match(pat)
+      if (m?.[1]?.startsWith('http') && isLikelyArticleImage(m[1])) return m[1]
     }
-  } catch (err) {
-    console.warn(`   ⚠️  Image generation failed: ${err.message}`)
-    return null
+  } catch {}
+  return null
+}
+
+// Ask Grok (with live search) to find the best official image page for a game
+async function findGamePressImageUrl(gameName, sourceUrl) {
+  // Step 1: try source article OG image first (fast + often great quality)
+  if (sourceUrl) {
+    const og = await fetchOgImage(sourceUrl)
+    if (og) {
+      console.log(`   �️  Using OG image from source article`)
+      return og
+    }
   }
 
-  // Normalise to JPEG
+  // Step 2: ask Grok to find the official PS Store / official site page for the game
+  console.log(`   🔍 Searching for official press image for "${gameName}"...`)
+  try {
+    const res = await axios.post(
+      'https://api.x.ai/v1/responses',
+      {
+        model: GROK_SEARCH_MODEL,
+        input: [{
+          role: 'user',
+          content: `Find the best official page URL for the game "${gameName}" — preferably the PlayStation Store listing (store.playstation.com) or the game's official website. Return ONLY the single URL, no explanation, no markdown.`,
+        }],
+        tools: [{ type: 'web_search' }],
+      },
+      {
+        headers: { Authorization: `Bearer ${process.env.XAI_API_KEY}`, 'Content-Type': 'application/json' },
+        timeout: 30000,
+      }
+    )
+
+    const output = res.data?.output || []
+    const message = output.find(o => o.type === 'message')
+    const text = (message?.content?.find(c => c.type === 'output_text')?.text || '').trim()
+
+    // Extract first URL from response
+    const urlMatch = text.match(/https?:\/\/[^\s\n"'<>]+/)
+    if (urlMatch) {
+      const officialOg = await fetchOgImage(urlMatch[0])
+      if (officialOg) {
+        console.log(`   🖼️  Found official press image via ${urlMatch[0]}`)
+        return officialOg
+      }
+    }
+  } catch (err) {
+    console.warn(`   ⚠️  Game image search failed: ${err.message}`)
+  }
+
+  return null
+}
+
+// Shared: watermark + upload any image buffer to Sanity
+async function processAndUploadBuffer(imageBuffer, label) {
   try {
     imageBuffer = await sharp(imageBuffer).rotate().jpeg({ quality: 90 }).toBuffer()
   } catch (err) {
     console.warn(`   ⚠️  JPEG conversion failed: ${err.message}`)
     return null
   }
-
-  // Apply PS6News watermark
   try {
     imageBuffer = await applyWatermark(imageBuffer)
     console.log('   🪧 Watermark applied')
   } catch (err) {
     console.warn(`   ⚠️  Watermark skipped: ${err.message}`)
   }
-
-  // Upload to Sanity
   try {
     const asset = await sanity.assets.upload('image', imageBuffer, {
-      filename: `ps6-ai-${Date.now()}.jpg`,
+      filename: `ps6-${label}-${Date.now()}.jpg`,
       contentType: 'image/jpeg',
     })
-    console.log(`   🖼️  AI image uploaded: ${asset._id}`)
+    console.log(`   ✅ Image uploaded: ${asset._id}`)
     return asset._id
   } catch (err) {
     console.warn(`   ⚠️  Sanity upload failed: ${err.message}`)
     return null
   }
+}
+
+// Generate AI concept image (for PS6 hardware / generic topics)
+async function generateAiImage(imagePrompt) {
+  console.log('   🎨 Generating AI concept image...')
+  try {
+    const response = await grok.images.generate({ model: GROK_IMAGE_MODEL, prompt: imagePrompt, n: 1 })
+    const imgData = response.data?.[0]
+    if (!imgData) throw new Error('Empty image response')
+
+    let buf
+    if (imgData.url) {
+      const res = await axios.get(imgData.url, { responseType: 'arraybuffer', timeout: 60000 })
+      buf = Buffer.from(res.data)
+    } else if (imgData.b64_json) {
+      buf = Buffer.from(imgData.b64_json, 'base64')
+    } else {
+      throw new Error('No image data')
+    }
+    return buf
+  } catch (err) {
+    console.warn(`   ⚠️  AI image generation failed: ${err.message}`)
+    return null
+  }
+}
+
+// Main image orchestrator — picks the right strategy per article
+async function getImageAssetId(data, story) {
+  const combinedText = `${data.title} ${story.summary || ''}`
+  const isNamedGame = NAMED_GAME_RE.test(combinedText)
+  const isPs6Concept = PS6_CONCEPT_RE.test(combinedText)
+
+  if (isNamedGame) {
+    console.log(`   🎮 Game article detected — searching for real press image...`)
+    const realImageUrl = await findGamePressImageUrl(data.title, story.sourceUrl)
+    if (realImageUrl) {
+      try {
+        const res = await axios.get(realImageUrl, { responseType: 'arraybuffer', timeout: 20000, headers: AXIOS_HEADERS })
+        return await processAndUploadBuffer(Buffer.from(res.data), 'game-press')
+      } catch (err) {
+        console.warn(`   ⚠️  Could not download real image (${err.message}), falling back to AI...`)
+      }
+    } else {
+      console.log(`   ⚠️  No real image found — falling back to AI...`)
+    }
+  }
+
+  if (isPs6Concept || !isNamedGame) {
+    const prompt = data.imagePrompt ||
+      `Cinematic next-gen PlayStation 6 console concept in dark studio, dramatic blue neon lighting, ultra-polished surface reflections, 4K ultra detail, no text no logos`
+    const buf = await generateAiImage(prompt)
+    if (buf) return await processAndUploadBuffer(buf, isPs6Concept ? 'ps6-concept' : 'ai')
+  }
+
+  return null
 }
 
 // ── Phase 4: Publish to Sanity ────────────────────────────────────────────────
@@ -557,9 +671,8 @@ async function run() {
         continue
       }
 
-      // Phase 3: Generate AI image
-      const fallbackImagePrompt = `Cinematic next-gen PlayStation 6 console concept in dark studio, dramatic blue neon lighting, ultra-polished surface reflections, 4K ultra detail, no text no logos`
-      const imageAssetId = await generateAndUploadImage(data.imagePrompt || fallbackImagePrompt)
+      // Phase 3: Smart image (real press image for games, AI for PS6/hardware)
+      const imageAssetId = await getImageAssetId(data, story)
 
       // Detect category
       const catBody = `${data.excerpt || ''} ${(data.sections || []).map(s => `${s.heading || ''} ${(s.paragraphs || []).join(' ')}`).join(' ')}`
