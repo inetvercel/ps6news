@@ -33,6 +33,39 @@ const GROK_TEXT_MODEL   = 'grok-3'          // Chat completions (rewrite)
 const GROK_MINI_MODEL   = 'grok-3-mini'     // Chat completions (SEO)
 const GROK_IMAGE_MODEL  = 'grok-imagine-image-quality' // Image generation
 
+// ── Known outlet URLs for auto-linking when mentioned by name ─────────────────
+const KNOWN_OUTLET_URLS = {
+  'Push Square':           'https://www.pushsquare.com',
+  'IGN':                   'https://www.ign.com',
+  'Eurogamer':             'https://www.eurogamer.net',
+  'VGC':                   'https://www.videogameschronicle.com',
+  'Video Games Chronicle': 'https://www.videogameschronicle.com',
+  'Kotaku':                'https://www.kotaku.com',
+  'Bloomberg':             'https://www.bloomberg.com',
+  'The Verge':             'https://www.theverge.com',
+  'Reuters':               'https://www.reuters.com',
+  'Digital Foundry':       'https://www.eurogamer.net/digital-foundry',
+  'GamesIndustry.biz':     'https://www.gamesindustry.biz',
+  'GamesIndustry':         'https://www.gamesindustry.biz',
+  'ComicBook.com':         'https://comicbook.com',
+  'TechRadar':             'https://www.techradar.com',
+  'indy100':               'https://www.indy100.com',
+  'BusinessMirror':        'https://businessmirror.com.ph',
+  'GamesRadar':            'https://www.gamesradar.com',
+  'Axios':                 'https://www.axios.com',
+}
+
+// Pillar topic patterns → used to match slugs from existing articles for internal links
+const PILLAR_TOPIC_PATTERNS = [
+  { re: /\b(release date|launch date|launch window|release window|launch timing|when.*release)\b/i,       topic: 'release' },
+  { re: /\b(specs|specifications|hardware spec|GPU|teraflop|RDNA|Zen \d|SSD speed|processing power)\b/i,  topic: 'specs'   },
+  { re: /\b(price|cost|retail price|launch price|how much|afford)\b/i,                                    topic: 'price'   },
+  { re: /\b(launch (games?|titles?)|launch lineup|launch library|first.party|exclusives?)\b/i,            topic: 'games'   },
+  { re: /\b(DualSense|controller|haptic feedback|adaptive trigger)\b/i,                                   topic: 'control' },
+  { re: /\b(backward compat|back.compat|PS4 games? on|legacy games?)\b/i,                                 topic: 'backcompat' },
+  { re: /\b(disc|physical (media|game|edition)|disc.?less|digital.?only)\b/i,                             topic: 'disc'    },
+]
+
 // ── Clients ──────────────────────────────────────────────────────────────────
 
 const sanity = createClient({
@@ -104,6 +137,103 @@ function parseParagraphWithLinks(text, existingArticles) {
     children: children.length > 0 ? children : [{ _type: 'span', _key: randomKey(), text: text.trim(), marks: [] }],
     markDefs,
   }
+}
+
+// ── Deterministic link injection ──────────────────────────────────────────────
+// Injects source, outlet, and internal pillar links into the generated article.
+// Called after rewriteStory so Grok only has to focus on writing quality.
+
+function injectArticleLinks(data, story, existingArticles) {
+  if (!data.sections?.length) return data
+
+  const MAX_EXT  = 4
+  const MAX_INT  = 2
+  let extCount   = 0
+  let intCount   = 0
+
+  // Already-linked outlet names/slugs — avoid double-linking
+  const linkedOutlets = new Set()
+  const linkedSlugs   = new Set()
+
+  // Build internal-link candidates from pillar articles
+  const pillarCandidates = [] // { re, slug }
+  for (const pattern of PILLAR_TOPIC_PATTERNS) {
+    // Find first pillar article whose slug/title matches this topic keyword
+    const match = existingArticles.find(a =>
+      a.isPillar && (pattern.re.test(a.title || '') || pattern.re.test(a.slug || ''))
+    )
+    if (match) pillarCandidates.push({ re: pattern.re, slug: match.slug })
+  }
+
+  const totalSections = data.sections.length
+
+  const processedSections = data.sections.map((section, sectionIdx) => {
+    const isFirst = sectionIdx === 0
+    const isLast  = sectionIdx === totalSections - 1
+
+    const paragraphs = (section.paragraphs || []).map((para, paraIdx) => {
+      let text = para
+
+      // ── 1. Source external link — always in opening paragraph ──────────────
+      if (isFirst && paraIdx === 0 && extCount < MAX_EXT && story.sourceUrl) {
+        const srcName = story.sourceName || 'the report'
+        const token   = `[[EXTLINK:${story.sourceUrl}|${srcName}]]`
+        // Skip if Grok already embedded it
+        if (!text.includes('[[EXTLINK:')) {
+          const nameRe = new RegExp(`\\b(${srcName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})\\b`, 'i')
+          if (nameRe.test(text)) {
+            text = text.replace(nameRe, token)
+          } else {
+            text = `According to ${token}, ` + text.charAt(0).toLowerCase() + text.slice(1)
+          }
+          linkedOutlets.add(srcName.toLowerCase())
+          extCount++
+        } else {
+          extCount++ // already embedded by Grok
+          linkedOutlets.add(srcName.toLowerCase())
+        }
+      }
+
+      // ── 2. Outlet auto-links — scan for known outlet names mid-article ─────
+      if (!isFirst && !isLast && extCount < MAX_EXT) {
+        for (const [outletName, outletUrl] of Object.entries(KNOWN_OUTLET_URLS)) {
+          if (linkedOutlets.has(outletName.toLowerCase())) continue
+          if (text.includes('[[EXTLINK:')) continue // already has a link in this para
+          // Escape for regex, match whole word/phrase
+          const outletRe = new RegExp(`\\b(${outletName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})\\b`)
+          if (outletRe.test(text)) {
+            text = text.replace(outletRe, `[[EXTLINK:${outletUrl}|$1]]`)
+            linkedOutlets.add(outletName.toLowerCase())
+            extCount++
+            if (extCount >= MAX_EXT) break
+          }
+        }
+      }
+
+      // ── 3. Internal pillar links — only mid-article, one per pillar slug ───
+      if (!isFirst && !isLast && intCount < MAX_INT) {
+        for (const candidate of pillarCandidates) {
+          if (linkedSlugs.has(candidate.slug)) continue
+          if (text.includes('[[LINK:')) continue // already has a link in this para
+          const m = candidate.re.exec(text)
+          if (m) {
+            const phrase = m[0]
+            text = text.replace(phrase, `[[LINK:${candidate.slug}|${phrase}]]`)
+            linkedSlugs.add(candidate.slug)
+            intCount++
+            if (intCount >= MAX_INT) break
+          }
+        }
+      }
+
+      return text
+    })
+
+    return { ...section, paragraphs }
+  })
+
+  console.log(`   🔗 Links injected: ${extCount} external, ${intCount} internal`)
+  return { ...data, sections: processedSections }
 }
 
 function textToBlocks(paragraphs, existingArticles = []) {
@@ -251,17 +381,7 @@ Return ONLY a raw JSON object — no markdown, no code fences, nothing before or
 
 // ── Phase 2: Grok rewrite ─────────────────────────────────────────────────────
 
-async function rewriteStory(story, existingArticles) {
-  const pillars  = existingArticles.filter(a =>  a.isPillar).slice(0, 10)
-  const recentNews = existingArticles.filter(a => !a.isPillar).slice(0, 10)
-
-  const pillarContext = pillars.length
-    ? `\nOUR PILLAR / GUIDE PAGES — link only if the sentence topic directly relates:\n${pillars.map(a => `  - slug: ${a.slug} | "${a.title}"`).join('\n')}`
-    : ''
-  const newsContext = recentNews.length
-    ? `\nOUR RECENT NEWS — link only if this article genuinely continues or references that story:\n${recentNews.map(a => `  - slug: ${a.slug} | "${a.title}"`).join('\n')}`
-    : ''
-
+async function rewriteStory(story) {
   const prompt = `You are a senior gaming journalist at PS6News.com (2026). Write a high-quality, in-depth news article based on the source below.
 
 ━━ LENGTH ━━
@@ -290,36 +410,9 @@ Add a table to a section using the optional "table" field:
     ]
   }
 
-━━ LINKS — CRITICAL: tokens must appear LITERALLY inside the paragraph strings ━━
-
-EXTERNAL LINKS use [[EXTLINK:URL|anchor text]] syntax.
-INTERNAL LINKS use [[LINK:slug|anchor text]] syntax.
-These tokens MUST be embedded directly inside the paragraph string values in your JSON output.
-DO NOT write plain text and describe where links would go — write the actual token in the string.
-
-MANDATORY — The opening paragraph MUST contain the source link token.
-Correct example of a paragraph string with an embedded token:
-"A new analysis from [[EXTLINK:${story.sourceUrl}|${story.sourceName || 'the report'}]] suggests Sony is now targeting a 2028 window for the PS6, driven by mounting concerns over memory costs that could push the retail price beyond $600."
-
-Wrong (plain text, no token — DO NOT do this):
-"A new analysis from ${story.sourceName || 'the report'} suggests Sony is now targeting a 2028 window."
-
-ADDITIONAL EXTERNAL LINKS — up to 3 more across the article body:
-• Only when you naturally reference another credible outlet by name (IGN, Eurogamer, VGC, Bloomberg, Kotaku, The Verge, Reuters, Digital Foundry, GamesIndustry.biz).
-• Token wraps the outlet name or a short meaningful phrase mid-sentence:
-  ✅ "as [[EXTLINK:https://eurogamer.net|Eurogamer]] noted in its analysis..."
-  ✅ "a separate [[EXTLINK:https://ign.com|IGN report]] corroborated the claim..."
-  ❌ "Read more. [[EXTLINK:https://ign.com|Click here]]." — never append links like this
-
-INTERNAL LINKS — max 2, zero is fine:
-• Only when the sentence topic DIRECTLY relates to one of the pages below.
-• Token sits mid-sentence as a natural phrase — never bolted to the end.
-  ✅ "Sony's [[LINK:ps6-release-date|anticipated 2027 launch window]] is now in doubt..."
-  ✅ "doubts remain about the [[LINK:ps6-specs|PS6's final hardware configuration]]..."
-  ❌ "We covered this. [[LINK:ps6-specs|PS6 specs]]." — never do this
-• NEVER in the opening or closing paragraph.
-${pillarContext}
-${newsContext}
+━━ WRITING FOCUS ━━
+Write clean, flowing prose only. Do NOT embed any link tokens or special syntax.
+Links will be added automatically after you write the article.
 
 ━━ IMAGE PROMPT ━━
 50-80 words. Safe for work, no real people, no brand logos. Cinematic photorealistic. Gaming/technology subject matching the article topic. Dark background, dramatic blue/purple neon lighting, ultra detail.
@@ -383,34 +476,7 @@ Respond ONLY with valid JSON (no markdown, no code fences):
     response_format: { type: 'json_object' },
   })
 
-  const data = JSON.parse(response.choices[0].message.content)
-
-  // Debug: count how many link tokens Grok actually embedded
-  const allParaText = (data.sections || []).flatMap(s => s.paragraphs || []).join('\n')
-  const extLinkCount = (allParaText.match(/\[\[EXTLINK:/g) || []).length
-  const intLinkCount = (allParaText.match(/\[\[LINK:/g) || []).length
-  console.log(`   🔗 Links embedded by Grok: ${extLinkCount} external, ${intLinkCount} internal`)
-
-  // Safety net: if Grok wrote no external links at all, inject the source link
-  // into the first sentence of the opening paragraph that mentions the source name
-  if (extLinkCount === 0 && story.sourceUrl && data.sections?.[0]?.paragraphs?.length) {
-    const srcName = story.sourceName || 'the report'
-    const srcLink = `[[EXTLINK:${story.sourceUrl}|${srcName}]]`
-    const firstPara = data.sections[0].paragraphs[0]
-
-    // Try to wrap the source name where it naturally appears
-    const nameRe = new RegExp(`\\b(${srcName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})\\b`, 'i')
-    if (nameRe.test(firstPara)) {
-      data.sections[0].paragraphs[0] = firstPara.replace(nameRe, srcLink)
-      console.log(`   ℹ️  Source link injected around "${srcName}"`)
-    } else {
-      // Prepend "According to [Source]," to the opening paragraph
-      data.sections[0].paragraphs[0] = `According to ${srcLink}, ` + firstPara.charAt(0).toLowerCase() + firstPara.slice(1)
-      console.log(`   ℹ️  Source link prepended to opening paragraph`)
-    }
-  }
-
-  return data
+  return JSON.parse(response.choices[0].message.content)
 }
 
 // ── Phase 3: Smart image strategy ────────────────────────────────────────────
@@ -746,9 +812,10 @@ async function run() {
         continue
       }
 
-      // Phase 2: Rewrite
+      // Phase 2: Rewrite then inject links deterministically
       console.log('   ✍️  Rewriting with Grok...')
-      const data = await rewriteStory(story, existingArticles)
+      const rawData = await rewriteStory(story)
+      const data = injectArticleLinks(rawData, story, existingArticles)
 
       if (!data?.title || !data?.slug) {
         console.log('   ⚠️  Invalid article data returned — skipping')
