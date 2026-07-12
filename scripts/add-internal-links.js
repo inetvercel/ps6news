@@ -29,22 +29,56 @@ const ALL    = args.includes('--all')
 const HOURS  = parseInt((args.find(a => a.startsWith('--hours=')) || '').split('=')[1] || '48', 10)
 const MAX_LINKS_PER_ARTICLE = 3
 
-// ── Pillar-topic patterns → used to identify which pillar page to link ────────
-// Each pattern matches phrases that naturally appear in articles about that topic.
-// The regex must use capturing groups if you want to preserve the original casing.
+// ── Pillar-topic patterns ─────────────────────────────────────────────────────
+// pillarRe  — matches the pillar article's OWN title/slug (loose, topic-level)
+// contentRe — matches phrases inside OTHER articles' body text (what to link)
 const PILLAR_PATTERNS = [
-  { re: /\b(release date|launch date|launch window|release window|release timing)\b/i,             topic: 'release'    },
-  { re: /\b(hardware spec(?:s|ification)?|GPU|teraflop|RDNA|Zen \d|processing power|SSD speed)\b/i, topic: 'specs'    },
-  { re: /\b(retail price|launch price|how much (?:the )?PS6|price point)\b/i,                      topic: 'price'      },
-  { re: /\b(launch (?:games?|titles?)|launch lineup|launch library|first.party (?:games?|titles?))\b/i, topic: 'games' },
-  { re: /\b(DualSense|adaptive triggers?|haptic feedback|PS6 controller)\b/i,                      topic: 'controller' },
-  { re: /\b(backward compat(?:ibility)?|back.compat|play PS[45] games? on)\b/i,                    topic: 'backcompat' },
-  { re: /\b(physical (?:media|games?|disc)|disc.?less|digital.?only console)\b/i,                  topic: 'disc'       },
-  { re: /\b(handheld|portable PlayStation|PS6 portable|PS6 Go)\b/i,                                topic: 'handheld'   },
+  {
+    topic:     'release',
+    pillarRe:  /release.?date|when.*(ps6|playstation.?6)|launch.*(date|window|year|timing)/i,
+    contentRe: /\b(release date|launch date|launch window|release window|release timing|expected launch|planned launch|launch year)\b/i,
+  },
+  {
+    topic:     'specs',
+    pillarRe:  /specs?|specification|hardware|gpu|teraflop|what.*(inside|under)/i,
+    contentRe: /\b(hardware specs?|technical specs?|GPU|teraflops?|RDNA|Zen \d|SSD speed|processing power|raw performance)\b/i,
+  },
+  {
+    topic:     'price',
+    pillarRe:  /price|cost|how.much|afford/i,
+    contentRe: /\b(retail price|launch price|price point|how much.*PS6|PS6.*price|cost of.*PS6|pricing|afford\w*)\b/i,
+  },
+  {
+    topic:     'games',
+    pillarRe:  /launch.?game|launch.?title|first.?party|exclusiv/i,
+    contentRe: /\b(launch games?|launch titles?|launch lineup|launch library|first.party (?:games?|titles?)|PS6 exclusives?)\b/i,
+  },
+  {
+    topic:     'controller',
+    pillarRe:  /controller|dualsense|dual.?sense|haptic/i,
+    contentRe: /\b(DualSense|PS6 controller|adaptive triggers?|haptic feedback|next.gen controller)\b/i,
+  },
+  {
+    topic:     'backcompat',
+    pillarRe:  /backward.?compat|back.?compat|legacy.?game/i,
+    contentRe: /\b(backward compat\w*|back.compat\w*|play PS[45] games? on|legacy games?)\b/i,
+  },
+  {
+    topic:     'disc',
+    pillarRe:  /disc|physical|disk.?drive|optical/i,
+    contentRe: /\b(disc drive|physical (?:media|games?|disc|edition)|disc.?less|digital.?only)\b/i,
+  },
+  {
+    topic:     'handheld',
+    pillarRe:  /handheld|portable|ps6.?go|ps.?portable/i,
+    contentRe: /\b(handheld|portable PlayStation|PS6 portable|PS6 Go|PlayStation handheld)\b/i,
+  },
+  {
+    topic:     'design',
+    pillarRe:  /design|look.?like|appearance|concept|aesthetic/i,
+    contentRe: /\b(PS6 design|what.*PS6 looks? like|console design|form factor|aesthetic)\b/i,
+  },
 ]
-
-// Pillar identification — articles whose slug/title matches these are evergreen guides
-const PILLAR_ID_RE = /specs|release.?date|price|cost|games|features|design|rumors?|leak|controllers?|backward.?compat|storage|cpu|gpu|ram|teraflop|launch|pre.?order|handheld|portable/i
 
 function rnd() { return Math.random().toString(36).substr(2, 10) }
 
@@ -53,12 +87,12 @@ async function buildPillarMap() {
   const all = await sanity.fetch(
     `*[_type == "article" && defined(slug.current)] | order(publishedAt asc) [0..199]{ _id, title, "slug": slug.current }`
   )
-  const pillars = all.filter(a => PILLAR_ID_RE.test(a.title || '') || PILLAR_ID_RE.test(a.slug || ''))
 
-  const map = [] // { re, slug, title }
+  const map = [] // { contentRe, slug, title }
   for (const pat of PILLAR_PATTERNS) {
-    const match = pillars.find(p => pat.re.test(p.title || '') || pat.re.test(p.slug || ''))
-    if (match) map.push({ re: pat.re, slug: match.slug, title: match.title })
+    // Use pillarRe to find the matching pillar article by its title/slug
+    const match = all.find(a => pat.pillarRe.test(a.title || '') || pat.pillarRe.test(a.slug || ''))
+    if (match) map.push({ contentRe: pat.contentRe, slug: match.slug, title: match.title, topic: pat.topic })
   }
   return map
 }
@@ -92,14 +126,14 @@ function processBlock(block, pillarMap, usedSlugs) {
       }
 
       const text = span.text || ''
-      const m = candidate.re.exec(text)
+      const m = candidate.contentRe.exec(text)
       if (!m) { updatedChildren.push(span); continue }
 
       const phraseStart = m.index
       const phraseEnd   = phraseStart + m[0].length
 
-      // Don't link if phrase is the very first word (too prominent / looks forced)
-      if (phraseStart < 15) { updatedChildren.push(span); continue }
+      // Don't link if phrase starts within first 8 chars (too close to paragraph start)
+      if (phraseStart < 8) { updatedChildren.push(span); continue }
 
       // Split span: before | linked phrase | after
       const before = text.slice(0, phraseStart)
@@ -176,7 +210,7 @@ async function run() {
   const pillarMap = await buildPillarMap()
   if (!pillarMap.length) { console.log('⚠️  No pillar articles found — nothing to link to.'); return }
   console.log(`📌 ${pillarMap.length} pillar link pattern(s) available:`)
-  pillarMap.forEach(p => console.log(`   • /${p.slug}  (${p.title})`))
+  pillarMap.forEach(p => console.log(`   • [${p.topic}] /${p.slug}  (${p.title})`))
   console.log()
 
   let query, params = {}
