@@ -397,28 +397,24 @@ async function rewriteStory(story) {
 5. If story is NOT directly about PS6, add a "What This Means for PS6" closing section.
 
 ━━ COMPARISON TABLES ━━
-Add a table to a section using the optional "table" field. Use tables to make data digestible and scannable — readers love them.
+Tables make articles far more useful — include one whenever the topic involves historical data, prices, specs, or timelines.
 
-WHEN TO ADD A TABLE:
-• Console launch prices across generations (PS1 → PS2 → PS3 → PS4 → PS5 → PS6 projected)
-• RAM/memory costs per GB over the years (2000, 2005, 2010, 2015, 2020, 2025, 2027 projected)
-• Specs compared across competing consoles
-• Regional pricing differences
-• Feature comparison between editions or tiers
-Only include figures that are real, verifiable, or widely-reported. For projections, label them clearly as "Projected" or "Estimated".
+STRONG TRIGGERS — add a table if the article covers any of these:
+• PS6 price or cost → "PlayStation Console Launch Prices" (PS1→PS5 real prices + PS6 projected)
+• PS6 release date or delay → "PlayStation Console Launch Dates" (PS1–PS6 timeline)
+• RAM, memory, or chip costs → "DRAM / Memory Cost Per GB" (2000–2025 + 2027 projected)
+• Specs or hardware → "Next-Gen Console Specs Compared" (PS6 vs Xbox Helix vs known figures)
+• Disc drive or physical vs digital → "PlayStation Physical vs Digital Sales Share" (2018–2025)
+• Regional pricing → table of UK/US/EU/AUS prices
 
-Table format:
-  "table": {
-    "caption": "Short descriptive caption",
-    "headers": ["Column 1", "Column 2", "Column 3"],
-    "rows": [
-      ["Row 1 Col 1", "Row 1 Col 2", "Row 1 Col 3"]
-    ]
-  }
+RULES:
+• Only use real, verifiable, or widely-reported figures. Label projections "Projected" or "Estimated".
+• If you don't have enough real data for a table, skip it — never invent numbers.
+• Aim to include a table in at least one section per article when the topic allows.
 
 ━━ WRITING FOCUS ━━
-Write clean, flowing prose only. Do NOT embed any link tokens or special syntax.
-Links will be added automatically after you write the article.
+Write clean, flowing prose only. Do NOT embed any link tokens, [[brackets]], or special syntax of any kind.
+Links will be added automatically — just write natural sentences.
 
 ━━ IMAGE PROMPT ━━
 50-80 words. Safe for work, no real people, no brand logos. Cinematic photorealistic. Gaming/technology subject matching the article topic. Dark background, dramatic blue/purple neon lighting, ultra detail.
@@ -441,30 +437,41 @@ Respond ONLY with valid JSON (no markdown, no code fences):
     {
       "heading": null,
       "paragraphs": [
-        "YOUR OPENING PARAGRAPH (70-110 words) — must include [[EXTLINK:${story.sourceUrl}|${story.sourceName || 'the report'}]] token mid-sentence on source first mention. Write real article content here.",
-        "YOUR SECOND PARAGRAPH (70-110 words) — expand the core claim with detail from the summary. Real content here."
+        "YOUR OPENING PARAGRAPH (70-110 words). Attribute the source by name. Write clean prose — no brackets, no special syntax.",
+        "YOUR SECOND PARAGRAPH (70-110 words). Expand the core claim with detail from the summary."
       ]
     },
     {
       "heading": "Your Section Heading Here",
       "paragraphs": [
-        "YOUR PARAGRAPH (70-110 words) — if relevant, embed [[LINK:matching-slug|natural phrase]] mid-sentence. Real content.",
-        "YOUR PARAGRAPH (70-110 words) — real content."
+        "YOUR PARAGRAPH (70-110 words). Add context, history, or background.",
+        "YOUR PARAGRAPH (70-110 words). Continue developing the point."
       ],
-      "table": null
+      "table": {
+        "caption": "PlayStation Console Launch Prices (USD)",
+        "headers": ["Console", "Launch Year", "Launch Price (USD)"],
+        "rows": [
+          ["PS1", "1994", "$299"],
+          ["PS2", "2000", "$299"],
+          ["PS3", "2006", "$499 / $599"],
+          ["PS4", "2013", "$399"],
+          ["PS5", "2020", "$499"],
+          ["PS6", "2028 (Projected)", "$599+ (Estimated)"]
+        ]
+      }
     },
     {
       "heading": "Your Section Heading Here",
       "paragraphs": [
-        "YOUR PARAGRAPH (70-110 words) — real content. If referencing another outlet by name, embed [[EXTLINK:their-url|Outlet Name]] mid-sentence.",
-        "YOUR PARAGRAPH (70-110 words) — real content."
+        "YOUR PARAGRAPH (70-110 words). Industry reaction, analyst opinion, or comparisons.",
+        "YOUR PARAGRAPH (70-110 words). Further implications or context."
       ],
       "table": null
     },
     {
       "heading": "What This Means for PS6",
       "paragraphs": [
-        "YOUR CLOSING PARAGRAPH (70-110 words) — PS6 angle, no links."
+        "YOUR CLOSING PARAGRAPH (70-110 words). PS6 angle and reader takeaway."
       ],
       "table": null
     }
