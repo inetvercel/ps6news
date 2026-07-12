@@ -1,0 +1,40 @@
+name: Auto Publish News
+
+on:
+  schedule:
+    # Runs every 6 hours: 00:00, 06:00, 12:00, 18:00 UTC
+    - cron: '0 */6 * * *'
+  workflow_dispatch: # Allow manual trigger from GitHub Actions UI
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Grok Publisher
+        env:
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+          SANITY_API_TOKEN: ${{ secrets.SANITY_API_TOKEN }}
+          NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_SANITY_PROJECT_ID }}
+          NEXT_PUBLIC_SANITY_DATASET: production
+        run: node scripts/grok-publish.js --count=2
+
+      - name: Inject Internal Links
+        env:
+          SANITY_API_TOKEN: ${{ secrets.SANITY_API_TOKEN }}
+          NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_SANITY_PROJECT_ID }}
+          NEXT_PUBLIC_SANITY_DATASET: production
+        run: node scripts/add-internal-links.js --hours=1
