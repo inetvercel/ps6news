@@ -215,10 +215,10 @@ function injectArticleLinks(data, story, existingArticles) {
         for (const candidate of pillarCandidates) {
           if (linkedSlugs.has(candidate.slug)) continue
           if (text.includes('[[LINK:')) continue // already has a link in this para
-          const m = candidate.re.exec(text)
-          if (m) {
-            const phrase = m[0]
-            text = text.replace(phrase, `[[LINK:${candidate.slug}|${phrase}]]`)
+          if (candidate.re.test(text)) {
+            // Use regex replacement (not string replace) so word boundaries are honoured
+            const singleRe = new RegExp(candidate.re.source, 'i')
+            text = text.replace(singleRe, (match) => `[[LINK:${candidate.slug}|${match}]]`)
             linkedSlugs.add(candidate.slug)
             intCount++
             if (intCount >= MAX_INT) break
@@ -397,16 +397,22 @@ async function rewriteStory(story) {
 5. If story is NOT directly about PS6, add a "What This Means for PS6" closing section.
 
 ━━ COMPARISON TABLES ━━
-Include a comparison table inside a section ONLY when there are at least 3 real, verifiable data points to compare (e.g. specs across consoles, price tiers, release dates across regions/platforms, feature lists).
-DO NOT invent or estimate data for a table — only include confirmed or widely-reported figures.
-If no real comparison data exists, omit the table entirely.
-Add a table to a section using the optional "table" field:
+Add a table to a section using the optional "table" field. Use tables to make data digestible and scannable — readers love them.
+
+WHEN TO ADD A TABLE:
+• Console launch prices across generations (PS1 → PS2 → PS3 → PS4 → PS5 → PS6 projected)
+• RAM/memory costs per GB over the years (2000, 2005, 2010, 2015, 2020, 2025, 2027 projected)
+• Specs compared across competing consoles
+• Regional pricing differences
+• Feature comparison between editions or tiers
+Only include figures that are real, verifiable, or widely-reported. For projections, label them clearly as "Projected" or "Estimated".
+
+Table format:
   "table": {
     "caption": "Short descriptive caption",
     "headers": ["Column 1", "Column 2", "Column 3"],
     "rows": [
-      ["Row 1 Col 1", "Row 1 Col 2", "Row 1 Col 3"],
-      ["Row 2 Col 1", "Row 2 Col 2", "Row 2 Col 3"]
+      ["Row 1 Col 1", "Row 1 Col 2", "Row 1 Col 3"]
     ]
   }
 
@@ -645,8 +651,11 @@ async function getImageAssetId(data, story) {
   }
 
   if (isPs6Concept || !isNamedGame) {
-    const prompt = data.imagePrompt ||
-      `Cinematic next-gen PlayStation 6 console concept in dark studio, dramatic blue neon lighting, ultra-polished surface reflections, 4K ultra detail, no text no logos`
+    // For PS6 hardware/concept articles always use a specific PS6-focused prompt
+    // so the AI doesn't generate a generic or Xbox-looking console
+    const prompt = isPs6Concept
+      ? `Cinematic next-generation Sony PlayStation 6 console concept, sleek angular matte-black body, glowing blue PS button logo, ultra-polished reflective surface, dark studio environment, dramatic blue and purple neon rim lighting, 4K ultra detail, no people, no text, no Xbox, no Nintendo, no brand logos`
+      : (data.imagePrompt || `Cinematic next-gen gaming technology, dark studio, dramatic blue neon lighting, 4K ultra detail, no people, no text, no logos`)
     const buf = await generateAiImage(prompt)
     if (buf) return await processAndUploadBuffer(buf, isPs6Concept ? 'ps6-concept' : 'ai')
   }
