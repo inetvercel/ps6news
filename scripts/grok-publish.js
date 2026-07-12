@@ -290,29 +290,34 @@ Add a table to a section using the optional "table" field:
     ]
   }
 
-━━ EXTERNAL LINKS ━━
-Use [[EXTLINK:URL|anchor text]] syntax. Rules:
-• ALWAYS link the source on first mention in the opening paragraph:
-  ✅ GOOD: "[[EXTLINK:${story.sourceUrl}|${story.sourceName || 'the report'}]] reveals that Sony..."
-  ✅ GOOD: "According to [[EXTLINK:${story.sourceUrl}|${story.sourceName || 'the report'}]], the new policy..."
-  ❌ BAD:  "Sony is ending disc support. [[EXTLINK:${story.sourceUrl}|Read the full story here]]." ← never add links like this
-• Add UP TO 3 more external links mid-article when you genuinely reference another credible outlet by name (IGN, Eurogamer, VGC, Bloomberg, Kotaku, The Verge, Reuters, Digital Foundry, GamesIndustry.biz).
-• The link anchor must be a natural in-sentence phrase — the outlet name, or a short meaningful claim.
-  ✅ GOOD: "A separate [[EXTLINK:https://ign.com|IGN]] analysis noted that..."
-  ✅ GOOD: "as [[EXTLINK:https://eurogamer.net|Eurogamer]] reported last month..."
-  ❌ BAD:  "...the news was reported by many outlets. [[EXTLINK:url|Click here]]."
-• Total external links per article: 1-4. Never force extras just to hit a number.
+━━ LINKS — CRITICAL: tokens must appear LITERALLY inside the paragraph strings ━━
 
-━━ INTERNAL LINKS ━━
-Use [[LINK:slug|anchor text]] syntax. Rules:
-• MAXIMUM 2 per article. Zero is absolutely fine.
-• Only use when the sentence topic DIRECTLY relates to the linked page.
-• The anchor text must sit naturally mid-sentence — never bolted to the end.
-  ✅ GOOD: "Sony's [[LINK:ps6-release-date|anticipated 2027 launch window]] has now been thrown into doubt..."
-  ✅ GOOD: "questions about the [[LINK:ps6-specs|PS6's final hardware spec]] remain unanswered"
-  ❌ BAD:  "We have covered this before. [[LINK:ps6-specs|PS6 specs]]."
-  ❌ BAD:  "...the console's power. For more, see [[LINK:ps6-specs|our specs guide]]." ← too mechanical
-• NEVER in opening or closing paragraph. NEVER just to hit a quota.
+EXTERNAL LINKS use [[EXTLINK:URL|anchor text]] syntax.
+INTERNAL LINKS use [[LINK:slug|anchor text]] syntax.
+These tokens MUST be embedded directly inside the paragraph string values in your JSON output.
+DO NOT write plain text and describe where links would go — write the actual token in the string.
+
+MANDATORY — The opening paragraph MUST contain the source link token.
+Correct example of a paragraph string with an embedded token:
+"A new analysis from [[EXTLINK:${story.sourceUrl}|${story.sourceName || 'the report'}]] suggests Sony is now targeting a 2028 window for the PS6, driven by mounting concerns over memory costs that could push the retail price beyond $600."
+
+Wrong (plain text, no token — DO NOT do this):
+"A new analysis from ${story.sourceName || 'the report'} suggests Sony is now targeting a 2028 window."
+
+ADDITIONAL EXTERNAL LINKS — up to 3 more across the article body:
+• Only when you naturally reference another credible outlet by name (IGN, Eurogamer, VGC, Bloomberg, Kotaku, The Verge, Reuters, Digital Foundry, GamesIndustry.biz).
+• Token wraps the outlet name or a short meaningful phrase mid-sentence:
+  ✅ "as [[EXTLINK:https://eurogamer.net|Eurogamer]] noted in its analysis..."
+  ✅ "a separate [[EXTLINK:https://ign.com|IGN report]] corroborated the claim..."
+  ❌ "Read more. [[EXTLINK:https://ign.com|Click here]]." — never append links like this
+
+INTERNAL LINKS — max 2, zero is fine:
+• Only when the sentence topic DIRECTLY relates to one of the pages below.
+• Token sits mid-sentence as a natural phrase — never bolted to the end.
+  ✅ "Sony's [[LINK:ps6-release-date|anticipated 2027 launch window]] is now in doubt..."
+  ✅ "doubts remain about the [[LINK:ps6-specs|PS6's final hardware configuration]]..."
+  ❌ "We covered this. [[LINK:ps6-specs|PS6 specs]]." — never do this
+• NEVER in the opening or closing paragraph.
 ${pillarContext}
 ${newsContext}
 
@@ -337,30 +342,30 @@ Respond ONLY with valid JSON (no markdown, no code fences):
     {
       "heading": null,
       "paragraphs": [
-        "Opening paragraph 70-110 words. Attribute source with [[EXTLINK:${story.sourceUrl}|${story.sourceName || 'the report'}]] woven naturally mid-sentence.",
-        "Second paragraph 70-110 words. Expand on the core claim."
+        "YOUR OPENING PARAGRAPH (70-110 words) — must include [[EXTLINK:${story.sourceUrl}|${story.sourceName || 'the report'}]] token mid-sentence on source first mention. Write real article content here.",
+        "YOUR SECOND PARAGRAPH (70-110 words) — expand the core claim with detail from the summary. Real content here."
       ]
     },
     {
-      "heading": "Relevant Section Heading",
+      "heading": "Your Section Heading Here",
       "paragraphs": [
-        "70-110 words. Weave in an internal [[LINK:slug|natural anchor phrase]] mid-sentence only if genuinely relevant.",
-        "70-110 words."
+        "YOUR PARAGRAPH (70-110 words) — if relevant, embed [[LINK:matching-slug|natural phrase]] mid-sentence. Real content.",
+        "YOUR PARAGRAPH (70-110 words) — real content."
       ],
       "table": null
     },
     {
-      "heading": "Another Section Heading",
+      "heading": "Your Section Heading Here",
       "paragraphs": [
-        "70-110 words.",
-        "70-110 words. Reference another outlet naturally: [[EXTLINK:url|Outlet Name]] noted that..."
+        "YOUR PARAGRAPH (70-110 words) — real content. If referencing another outlet by name, embed [[EXTLINK:their-url|Outlet Name]] mid-sentence.",
+        "YOUR PARAGRAPH (70-110 words) — real content."
       ],
       "table": null
     },
     {
       "heading": "What This Means for PS6",
       "paragraphs": [
-        "70-110 words closing PS6-angle paragraph. No links here."
+        "YOUR CLOSING PARAGRAPH (70-110 words) — PS6 angle, no links."
       ],
       "table": null
     }
@@ -378,7 +383,34 @@ Respond ONLY with valid JSON (no markdown, no code fences):
     response_format: { type: 'json_object' },
   })
 
-  return JSON.parse(response.choices[0].message.content)
+  const data = JSON.parse(response.choices[0].message.content)
+
+  // Debug: count how many link tokens Grok actually embedded
+  const allParaText = (data.sections || []).flatMap(s => s.paragraphs || []).join('\n')
+  const extLinkCount = (allParaText.match(/\[\[EXTLINK:/g) || []).length
+  const intLinkCount = (allParaText.match(/\[\[LINK:/g) || []).length
+  console.log(`   🔗 Links embedded by Grok: ${extLinkCount} external, ${intLinkCount} internal`)
+
+  // Safety net: if Grok wrote no external links at all, inject the source link
+  // into the first sentence of the opening paragraph that mentions the source name
+  if (extLinkCount === 0 && story.sourceUrl && data.sections?.[0]?.paragraphs?.length) {
+    const srcName = story.sourceName || 'the report'
+    const srcLink = `[[EXTLINK:${story.sourceUrl}|${srcName}]]`
+    const firstPara = data.sections[0].paragraphs[0]
+
+    // Try to wrap the source name where it naturally appears
+    const nameRe = new RegExp(`\\b(${srcName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})\\b`, 'i')
+    if (nameRe.test(firstPara)) {
+      data.sections[0].paragraphs[0] = firstPara.replace(nameRe, srcLink)
+      console.log(`   ℹ️  Source link injected around "${srcName}"`)
+    } else {
+      // Prepend "According to [Source]," to the opening paragraph
+      data.sections[0].paragraphs[0] = `According to ${srcLink}, ` + firstPara.charAt(0).toLowerCase() + firstPara.slice(1)
+      console.log(`   ℹ️  Source link prepended to opening paragraph`)
+    }
+  }
+
+  return data
 }
 
 // ── Phase 3: Smart image strategy ────────────────────────────────────────────
