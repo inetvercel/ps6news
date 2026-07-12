@@ -1,145 +1,211 @@
+/**
+ * PS6News Smart Internal Link Injector
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Dynamically scans published articles and injects natural internal pillar-page
+ * links directly into body text — no wording changes, links sit mid-sentence.
+ *
+ * Usage:
+ *   node scripts/add-internal-links.js              # articles from last 48 h
+ *   node scripts/add-internal-links.js --hours=168  # last 7 days
+ *   node scripts/add-internal-links.js --all        # every article in CMS
+ *   node scripts/add-internal-links.js --dry-run    # preview, no writes
+ */
+
+require('dotenv').config({ path: '.env.local' })
 const { createClient } = require('@sanity/client')
 
-const client = createClient({
-  projectId: 'zzzwo1aw',
+const sanity = createClient({
+  projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || 'zzzwo1aw',
   dataset: 'production',
   apiVersion: '2024-01-01',
-  token: process.env.SANITY_API_TOKEN,
+  token: process.env.SANITY_API_TOKEN || process.env.SANITY_TOKEN,
   useCdn: false,
 })
 
-let _k = 1
-function key() { return 'il' + (_k++).toString().padStart(4, '0') }
+// ── CLI ───────────────────────────────────────────────────────────────────────
+const args   = process.argv.slice(2)
+const DRY    = args.includes('--dry-run')
+const ALL    = args.includes('--all')
+const HOURS  = parseInt((args.find(a => a.startsWith('--hours=')) || '').split('=')[1] || '48', 10)
+const MAX_LINKS_PER_ARTICLE = 3
 
-function block(text) {
-  return { _type: 'block', _key: key(), style: 'normal', markDefs: [], children: [{ _type: 'span', _key: key(), text, marks: [] }] }
+// ── Pillar-topic patterns → used to identify which pillar page to link ────────
+// Each pattern matches phrases that naturally appear in articles about that topic.
+// The regex must use capturing groups if you want to preserve the original casing.
+const PILLAR_PATTERNS = [
+  { re: /\b(release date|launch date|launch window|release window|release timing)\b/i,             topic: 'release'    },
+  { re: /\b(hardware spec(?:s|ification)?|GPU|teraflop|RDNA|Zen \d|processing power|SSD speed)\b/i, topic: 'specs'    },
+  { re: /\b(retail price|launch price|how much (?:the )?PS6|price point)\b/i,                      topic: 'price'      },
+  { re: /\b(launch (?:games?|titles?)|launch lineup|launch library|first.party (?:games?|titles?))\b/i, topic: 'games' },
+  { re: /\b(DualSense|adaptive triggers?|haptic feedback|PS6 controller)\b/i,                      topic: 'controller' },
+  { re: /\b(backward compat(?:ibility)?|back.compat|play PS[45] games? on)\b/i,                    topic: 'backcompat' },
+  { re: /\b(physical (?:media|games?|disc)|disc.?less|digital.?only console)\b/i,                  topic: 'disc'       },
+  { re: /\b(handheld|portable PlayStation|PS6 portable|PS6 Go)\b/i,                                topic: 'handheld'   },
+]
+
+// Pillar identification — articles whose slug/title matches these are evergreen guides
+const PILLAR_ID_RE = /specs|release.?date|price|cost|games|features|design|rumors?|leak|controllers?|backward.?compat|storage|cpu|gpu|ram|teraflop|launch|pre.?order|handheld|portable/i
+
+function rnd() { return Math.random().toString(36).substr(2, 10) }
+
+// ── Build pillar link map from Sanity ─────────────────────────────────────────
+async function buildPillarMap() {
+  const all = await sanity.fetch(
+    `*[_type == "article" && defined(slug.current)] | order(publishedAt asc) [0..199]{ _id, title, "slug": slug.current }`
+  )
+  const pillars = all.filter(a => PILLAR_ID_RE.test(a.title || '') || PILLAR_ID_RE.test(a.slug || ''))
+
+  const map = [] // { re, slug, title }
+  for (const pat of PILLAR_PATTERNS) {
+    const match = pillars.find(p => pat.re.test(p.title || '') || pat.re.test(p.slug || ''))
+    if (match) map.push({ re: pat.re, slug: match.slug, title: match.title })
+  }
+  return map
 }
 
-function blockWithLinks(segments) {
-  const markDefs = []
-  const children = segments.map(seg => {
-    if (seg.href) {
-      const k = key()
-      markDefs.push({ _type: 'link', _key: k, href: seg.href })
-      return { _type: 'span', _key: key(), text: seg.text, marks: [k] }
+// ── Inject links into a single Portable Text block ───────────────────────────
+// Only modifies normal-text blocks; skips headings and already-linked blocks.
+// Returns modified block or null if nothing changed.
+function processBlock(block, pillarMap, usedSlugs) {
+  if (block._type !== 'block') return null
+  if (block.style && block.style !== 'normal') return null // skip headings
+
+  // Skip blocks that already contain a link annotation
+  const existingLinkDefs = (block.markDefs || []).filter(d => d._type === 'link' || d._type === 'internalLink')
+  if (existingLinkDefs.length > 0) return null
+
+  const newMarkDefs = [...(block.markDefs || [])]
+  let newChildren = [...(block.children || [])]
+  let modified = false
+
+  for (const candidate of pillarMap) {
+    if (usedSlugs.has(candidate.slug)) continue
+
+    // Find the first span that fully contains the phrase (single-span match)
+    let matched = false
+    const updatedChildren = []
+
+    for (const span of newChildren) {
+      if (matched || span._type !== 'span' || (span.marks || []).length > 0) {
+        updatedChildren.push(span)
+        continue
+      }
+
+      const text = span.text || ''
+      const m = candidate.re.exec(text)
+      if (!m) { updatedChildren.push(span); continue }
+
+      const phraseStart = m.index
+      const phraseEnd   = phraseStart + m[0].length
+
+      // Don't link if phrase is the very first word (too prominent / looks forced)
+      if (phraseStart < 15) { updatedChildren.push(span); continue }
+
+      // Split span: before | linked phrase | after
+      const before = text.slice(0, phraseStart)
+      const phrase = m[0]
+      const after  = text.slice(phraseEnd)
+
+      const linkKey = rnd()
+      newMarkDefs.push({ _key: linkKey, _type: 'link', href: `/${candidate.slug}` })
+
+      if (before) updatedChildren.push({ ...span, _key: rnd(), text: before })
+      updatedChildren.push({ ...span, _key: rnd(), text: phrase, marks: [...(span.marks || []), linkKey] })
+      if (after)  updatedChildren.push({ ...span, _key: rnd(), text: after })
+
+      matched = true
+      modified = true
+      usedSlugs.add(candidate.slug)
     }
-    return { _type: 'span', _key: key(), text: seg.text, marks: [] }
-  })
-  return { _type: 'block', _key: key(), style: 'normal', markDefs, children }
-}
 
-// Internal URLs
-const URLS = {
-  specs:       '/articles/ps6-specs',
-  earlySpecs:  '/articles/ps6-early-specs-leak-amd-power-promises-8k-gaming-at-60-fps',
-  design:      '/articles/what-will-the-ps6-look-like',
-  gta6:        '/articles/gta6-release',
-  cost:        '/articles/ps6-cost',
-  disc:        '/articles/ps6-disc-drive',
-  howto:       '/articles/how-to-prepare-for-the-ps6-launch',
-}
-
-// Each article gets a closing "Related reading" paragraph block with 4 internal links
-const relatedBlocks = {
-
-  'article-4391': blockWithLinks([
-    { text: 'For broader context, see our full rundown of ' },
-    { text: 'PS6 specs and rumours', href: URLS.specs },
-    { text: ', dig into ' },
-    { text: 'PS6 price predictions', href: URLS.cost },
-    { text: ', find out ' },
-    { text: 'whether the PS6 will have a disc drive', href: URLS.disc },
-    { text: ', and explore ' },
-    { text: 'early PS6 design concepts', href: URLS.design },
-    { text: '.' },
-  ]),
-
-  'article-4416': blockWithLinks([
-    { text: 'Before you prepare, brush up on ' },
-    { text: 'how much the PS6 is likely to cost', href: URLS.cost },
-    { text: ', check the latest ' },
-    { text: 'PS6 hardware specs', href: URLS.specs },
-    { text: ', learn ' },
-    { text: 'whether the PS6 will include a disc drive', href: URLS.disc },
-    { text: ', and see how ' },
-    { text: 'GTA 6 could shape the PS6 launch', href: URLS.gta6 },
-    { text: '.' },
-  ]),
-
-  'article-4445': blockWithLinks([
-    { text: 'Alongside design, it\'s worth reading the ' },
-    { text: 'full PS6 specs breakdown', href: URLS.specs },
-    { text: ', the ' },
-    { text: 'early AMD specs leak', href: URLS.earlySpecs },
-    { text: ', details on ' },
-    { text: 'the PS6 disc drive situation', href: URLS.disc },
-    { text: ', and ' },
-    { text: 'PS6 price estimates', href: URLS.cost },
-    { text: '.' },
-  ]),
-
-  'article-4465': blockWithLinks([
-    { text: 'Also relevant: the ' },
-    { text: 'latest PS6 specs and hardware rumours', href: URLS.specs },
-    { text: ', ' },
-    { text: 'PS6 price predictions', href: URLS.cost },
-    { text: ', ' },
-    { text: 'PS6 design concepts', href: URLS.design },
-    { text: ', and our ' },
-    { text: 'PS6 launch preparation guide', href: URLS.howto },
-    { text: '.' },
-  ]),
-
-  'article-4475': blockWithLinks([
-    { text: 'Related: the ' },
-    { text: 'full PS6 specs overview', href: URLS.specs },
-    { text: ', ' },
-    { text: 'disc drive plans for the PS6', href: URLS.disc },
-    { text: ', the ' },
-    { text: 'early AMD hardware leak', href: URLS.earlySpecs },
-    { text: ', and our ' },
-    { text: 'guide to preparing for the PS6 launch', href: URLS.howto },
-    { text: '.' },
-  ]),
-
-  'article-4480': blockWithLinks([
-    { text: 'See also: ' },
-    { text: 'everything we know about PS6 specs', href: URLS.specs },
-    { text: ', ' },
-    { text: 'PS6 cost and price analysis', href: URLS.cost },
-    { text: ', ' },
-    { text: 'PS6 design leaks and concepts', href: URLS.design },
-    { text: ', and how ' },
-    { text: 'GTA 6 is expected to influence the PS6 launch', href: URLS.gta6 },
-    { text: '.' },
-  ]),
-
-  'article-4487': blockWithLinks([
-    { text: 'Further reading: ' },
-    { text: 'PS6 price predictions and analysis', href: URLS.cost },
-    { text: ', ' },
-    { text: 'the PS6 disc drive debate', href: URLS.disc },
-    { text: ', ' },
-    { text: 'PS6 design concepts', href: URLS.design },
-    { text: ', and ' },
-    { text: 'GTA 6 and next-gen PS6 potential', href: URLS.gta6 },
-    { text: '.' },
-  ]),
-}
-
-async function run() {
-  const ids = Object.keys(relatedBlocks)
-
-  for (const id of ids) {
-    const article = await client.fetch(`*[_id == "${id}"][0]{_id, title, body}`)
-    if (!article) { console.log(`❌ Not found: ${id}`); continue }
-
-    const newBody = [...(article.body || []), relatedBlocks[id]]
-    await client.patch(id).set({ body: newBody }).commit()
-    console.log(`✅ ${article.title}`)
+    if (modified) newChildren = updatedChildren
   }
 
-  console.log('\n✅ All internal links added!')
+  if (!modified) return null
+  return { ...block, markDefs: newMarkDefs, children: newChildren }
+}
+
+// ── Process a single article ───────────────────────────────────────────────────
+async function processArticle(article, pillarMap) {
+  const body = article.body || []
+  if (!body.length) return 0
+
+  // Identify first and last normal-text blocks — never link there
+  const normalBlocks  = body.filter(b => b._type === 'block' && (!b.style || b.style === 'normal'))
+  const firstBlockKey = normalBlocks[0]?._key
+  const lastBlockKey  = normalBlocks[normalBlocks.length - 1]?._key
+
+  const usedSlugs = new Set()
+  let linkCount   = 0
+  const newBody   = []
+
+  for (const block of body) {
+    const isEdge = block._key === firstBlockKey || block._key === lastBlockKey
+    if (isEdge || usedSlugs.size >= MAX_LINKS_PER_ARTICLE) {
+      newBody.push(block)
+      continue
+    }
+
+    const updated = processBlock(block, pillarMap, usedSlugs)
+    if (updated) {
+      newBody.push(updated)
+      linkCount++
+    } else {
+      newBody.push(block)
+    }
+  }
+
+  if (!linkCount) return 0
+
+  if (DRY) {
+    const preview = [...usedSlugs].join(', ')
+    console.log(`   [dry-run] Would add ${linkCount} link(s) → ${preview}`)
+    return linkCount
+  }
+
+  await sanity.patch(article._id).set({ body: newBody }).commit()
+  return linkCount
+}
+
+// ── Main ──────────────────────────────────────────────────────────────────────
+async function run() {
+  console.log('\n🔗 PS6News Smart Internal Link Injector')
+  console.log(`   Mode : ${DRY ? 'DRY RUN (no writes)' : 'LIVE'}`)
+  console.log(`   Scope: ${ALL ? 'ALL articles' : `published in last ${HOURS} hours`}\n`)
+
+  const pillarMap = await buildPillarMap()
+  if (!pillarMap.length) { console.log('⚠️  No pillar articles found — nothing to link to.'); return }
+  console.log(`📌 ${pillarMap.length} pillar link pattern(s) available:`)
+  pillarMap.forEach(p => console.log(`   • /${p.slug}  (${p.title})`))
+  console.log()
+
+  let query, params = {}
+  if (ALL) {
+    query = `*[_type == "article"] | order(publishedAt desc) { _id, title, "slug": slug.current, body, publishedAt }`
+  } else {
+    const since = new Date(Date.now() - HOURS * 3600 * 1000).toISOString()
+    query  = `*[_type == "article" && publishedAt > $since] | order(publishedAt desc) { _id, title, "slug": slug.current, body, publishedAt }`
+    params = { since }
+  }
+
+  const articles = await sanity.fetch(query, params)
+  if (!articles.length) { console.log('ℹ️  No articles found in that time window.\n'); return }
+  console.log(`📚 ${articles.length} article(s) to process\n`)
+
+  let totalLinks = 0
+
+  for (const article of articles) {
+    console.log(`📰 "${article.title}"`)
+    const count = await processArticle(article, pillarMap)
+    if (count) {
+      console.log(`   ✅ Injected ${count} internal link(s)`)
+      totalLinks += count
+    } else {
+      console.log(`   ─  No suitable positions found`)
+    }
+  }
+
+  console.log(`\n✅ Done — ${totalLinks} total link(s) ${DRY ? 'would be ' : ''}injected across ${articles.length} article(s)\n`)
 }
 
 run().catch(err => { console.error(err); process.exit(1) })

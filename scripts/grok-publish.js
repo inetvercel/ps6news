@@ -729,7 +729,7 @@ async function publishToSanity(data, authorId, categoryId, imageAssetId, existin
     _type: 'article',
     title: data.title,
     slug: { _type: 'slug', current: data.slug },
-    excerpt: data.excerpt,
+    excerpt: data.excerpt ? data.excerpt.slice(0, 195) : undefined,
     body,
     publishedAt: new Date().toISOString(),
     featured: false,

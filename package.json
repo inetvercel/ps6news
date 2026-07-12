@@ -15,7 +15,9 @@
     "generate-poll": "node scripts/generate-poll.js",
     "export-subscribers": "node scripts/export-subscribers.js",
     "seo-backfill": "node scripts/seo-backfill.js",
-    "grok-publish": "node scripts/grok-publish.js"
+    "grok-publish": "node scripts/grok-publish.js",
+    "add-links": "node scripts/add-internal-links.js",
+    "add-links:all": "node scripts/add-internal-links.js --all"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
