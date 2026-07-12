@@ -31,7 +31,7 @@ const { generateSeo } = require('./lib/seo')
 const GROK_SEARCH_MODEL = 'grok-4.5'        // Responses API (web search)
 const GROK_TEXT_MODEL   = 'grok-3'          // Chat completions (rewrite)
 const GROK_MINI_MODEL   = 'grok-3-mini'     // Chat completions (SEO)
-const GROK_IMAGE_MODEL  = 'grok-2-image-1212' // Image generation
+const GROK_IMAGE_MODEL  = 'grok-imagine-image-quality' // Image generation
 
 // ── Clients ──────────────────────────────────────────────────────────────────
 
@@ -320,18 +320,17 @@ async function generateAndUploadImage(imagePrompt) {
       model: GROK_IMAGE_MODEL,
       prompt: imagePrompt,
       n: 1,
-      response_format: 'url',
     })
 
     const imgData = response.data?.[0]
     if (!imgData) throw new Error('Empty image response')
 
-    if (imgData.b64_json) {
-      imageBuffer = Buffer.from(imgData.b64_json, 'base64')
-    } else if (imgData.url) {
+    if (imgData.url) {
       console.log(`   📥 Downloading generated image...`)
-      const res = await axios.get(imgData.url, { responseType: 'arraybuffer', timeout: 30000 })
+      const res = await axios.get(imgData.url, { responseType: 'arraybuffer', timeout: 60000 })
       imageBuffer = Buffer.from(res.data)
+    } else if (imgData.b64_json) {
+      imageBuffer = Buffer.from(imgData.b64_json, 'base64')
     } else {
       throw new Error('No image URL or base64 in response')
     }
