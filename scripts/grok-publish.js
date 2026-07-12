@@ -62,29 +62,44 @@ function randomKey() {
 }
 
 function parseParagraphWithLinks(text, existingArticles) {
-  const linkPattern = /\[\[LINK:([^|]+)\|([^\]]+)\]\]/g
+  // Matches [[LINK:slug|anchor]] and [[EXTLINK:https://...|anchor]]
+  const linkPattern = /\[\[(LINK|EXTLINK):([^|]+)\|([^\]]+)\]\]/g
   const markDefs = []
   const children = []
   let lastIndex = 0
   let match
+
   while ((match = linkPattern.exec(text)) !== null) {
     if (match.index > lastIndex) {
       children.push({ _type: 'span', _key: randomKey(), text: text.slice(lastIndex, match.index), marks: [] })
     }
-    const [, slug, anchorText] = match
-    const article = existingArticles.find(a => a.slug === slug)
-    if (article) {
-      const linkKey = randomKey()
-      markDefs.push({ _key: linkKey, _type: 'internalLink', reference: { _type: 'reference', _ref: article._id } })
+
+    const [, type, target, anchorText] = match
+    const linkKey = randomKey()
+
+    if (type === 'EXTLINK') {
+      // External link — uses the schema's built-in `link` annotation
+      markDefs.push({ _key: linkKey, _type: 'link', href: target.trim(), blank: true })
       children.push({ _type: 'span', _key: randomKey(), text: anchorText, marks: [linkKey] })
     } else {
-      children.push({ _type: 'span', _key: randomKey(), text: anchorText, marks: [] })
+      // Internal link — resolve slug to Sanity document reference
+      const article = existingArticles.find(a => a.slug === target.trim())
+      if (article) {
+        markDefs.push({ _key: linkKey, _type: 'link', href: `/${article.slug}` })
+        children.push({ _type: 'span', _key: randomKey(), text: anchorText, marks: [linkKey] })
+      } else {
+        // Slug not found — render plain text to avoid broken links
+        children.push({ _type: 'span', _key: randomKey(), text: anchorText, marks: [] })
+      }
     }
+
     lastIndex = match.index + match[0].length
   }
+
   if (lastIndex < text.length) {
     children.push({ _type: 'span', _key: randomKey(), text: text.slice(lastIndex), marks: [] })
   }
+
   return {
     children: children.length > 0 ? children : [{ _type: 'span', _key: randomKey(), text: text.trim(), marks: [] }],
     markDefs,
@@ -120,10 +135,18 @@ function isDuplicate(title, existingArticles) {
 
 // ── Sanity helpers ────────────────────────────────────────────────────────────
 
+// Pillar page keywords — articles whose slugs/titles match these are evergreen guides
+const PILLAR_KEYWORDS = /specs|release.?date|price|cost|games|features|design|rumors?|leak|controllers?|backward.?compat|storage|cpu|gpu|ram|teraflop|launch|pre.?order/i
+
 async function fetchExistingArticles() {
-  return await sanity.fetch(
+  const articles = await sanity.fetch(
     `*[_type == "article"] | order(publishedAt desc) [0..49]{ _id, title, "slug": slug.current }`
   )
+  // Tag pillar pages so the AI prompt can reference them correctly
+  return articles.map(a => ({
+    ...a,
+    isPillar: PILLAR_KEYWORDS.test(a.title || '') || PILLAR_KEYWORDS.test(a.slug || ''),
+  }))
 }
 
 async function slugExists(slug) {
@@ -229,30 +252,54 @@ Return ONLY a raw JSON object — no markdown, no code fences, nothing before or
 // ── Phase 2: Grok rewrite ─────────────────────────────────────────────────────
 
 async function rewriteStory(story, existingArticles) {
-  const articlesContext = existingArticles.length
-    ? `\nEXISTING PS6NEWS ARTICLES — for internal links (optional, natural only):\n${existingArticles.slice(0, 15).map(a => `- "${a.title}" → slug: ${a.slug}`).join('\n')}\nUse [[LINK:slug|anchor text]] syntax once or twice MAX, only where it reads naturally.`
+  // Split articles into pillar guides and regular news for clearer prompting
+  const pillars = existingArticles.filter(a => a.isPillar).slice(0, 10)
+  const recentNews = existingArticles.filter(a => !a.isPillar).slice(0, 10)
+
+  const pillarContext = pillars.length
+    ? `\nOUR PILLAR / GUIDE PAGES (evergreen, high-value — link here if the article topic directly relates):\n${pillars.map(a => `  - slug: ${a.slug} | "${a.title}"`).join('\n')}`
+    : ''
+
+  const newsContext = recentNews.length
+    ? `\nOUR RECENT NEWS ARTICLES (only link if this new article genuinely continues or references that story):\n${recentNews.map(a => `  - slug: ${a.slug} | "${a.title}"`).join('\n')}`
     : ''
 
   const prompt = `You are a senior gaming journalist at PS6News.com (2026). Write a full professional news article — minimum 600 words — based on the story below.
 
-STRICT RULES:
-1. Base the article ONLY on the source summary provided. Do not invent facts, specs, quotes, or dates not mentioned.
-2. Rewrite completely in your own words. Do not copy sentences verbatim.
+WRITING RULES:
+1. Base the article ONLY on the source summary. Do not invent facts, specs, quotes, or dates.
+2. Rewrite completely in your own words. No verbatim copying.
 3. Sharp, engaging British English — active voice, strong verbs, no waffle.
 4. Structure: compelling hook intro → developed body with subheadings → PS6-angle closing section.
 5. Every paragraph must be 60-100 words. No one-liner paragraphs.
-6. Mention the original source ONCE in the opening paragraph, then write as PS6News original reporting.
-7. If the story is NOT directly about PS6, add a "What This Means for PS6" closing section.${articlesContext}
+6. Name the original source ONCE in the opening paragraph, then write as PS6News original reporting.
+7. If the story is NOT directly about PS6, add a "What This Means for PS6" closing section.
 
-Also generate an AI image prompt for the featured image (50-80 words). It must be:
-- Safe for work, no people, no real brands/logos
-- Cinematic and photorealistic style
-- Gaming/technology focused, matching the article topic
-- Dark background, dramatic blue/purple lighting, ultra detail
+LINKING RULES — read carefully, this is important:
+
+EXTERNAL LINKS — use [[EXTLINK:URL|anchor text]] syntax:
+• ALWAYS link the source on its FIRST mention in the opening paragraph using the source URL below.
+  Example: "According to [[EXTLINK:${story.sourceUrl}|${story.sourceName || 'the report'}]], Sony has..."
+• You MAY add 1-2 more external links if you genuinely reference another credible outlet (IGN, Eurogamer, VGC, Bloomberg, Kotaku, The Verge, Reuters) by name in the text. Only if it reads naturally — never force it.
+• NEVER link to competitor news sites just to link — only when you directly reference their reporting.
+• Link the anchor text to a meaningful phrase (the outlet name, or the specific claim), never bare URLs.
+
+INTERNAL LINKS — use [[LINK:slug|anchor text]] syntax:
+• Only link to one of the pages listed below if the topic you are writing DIRECTLY relates.
+• Maximum 2 internal links per article. Zero is fine — only add them if they genuinely help the reader.
+• Place internal links mid-article where context arises naturally — NEVER in the opening or closing paragraph.
+• The anchor text must be a natural phrase in the sentence, not a forced insertion.
+• NEVER link just to hit a quota. A reader should not notice the link was added by an AI.
+${pillarContext}
+${newsContext}
+
+IMAGE PROMPT RULES:
+Generate a 50-80 word AI image prompt for the featured image. It must be safe for work, no real people, no brand logos. Cinematic photorealistic style. Gaming/technology subject matching the article topic. Dark background, dramatic blue/purple neon lighting, ultra detail.
 
 SOURCE:
 Headline: ${story.headline}
-Source: ${story.sourceName || story.sourceUrl}
+Source URL: ${story.sourceUrl}
+Source name: ${story.sourceName || 'the source'}
 Published: ${story.publishedAt || 'recently'}
 Summary:
 ${story.summary}
@@ -262,19 +309,19 @@ Respond ONLY with valid JSON (no markdown, no code fences):
   "title": "Compelling headline under 70 chars, keyword-first",
   "slug": "seo-slug-lowercase-hyphens-max-55-chars",
   "excerpt": "Punchy meta description 130-155 chars with emotional hook or CTA",
-  "imagePrompt": "Cinematic photorealistic [topic-specific detail], next-gen gaming technology, dramatic blue neon lighting, dark studio background, 4K ultra detail, no text no logos no people",
+  "imagePrompt": "Cinematic photorealistic ...",
   "sections": [
     {
       "heading": null,
       "paragraphs": [
-        "Strong opening paragraph 60-90 words: lead with the most important fact, name the source once.",
-        "Second paragraph 60-90 words: expand on the core claim with supporting detail."
+        "Opening paragraph 60-90 words with source attribution and [[EXTLINK:${story.sourceUrl}|${story.sourceName || 'the report'}]] linked naturally.",
+        "Second paragraph 60-90 words expanding on the core claim."
       ]
     },
     {
       "heading": "Relevant Section Heading",
       "paragraphs": [
-        "Third paragraph 60-90 words.",
+        "Third paragraph 60-90 words. Add an internal [[LINK:slug|anchor]] here only if genuinely relevant.",
         "Fourth paragraph 60-90 words."
       ]
     },
@@ -282,13 +329,13 @@ Respond ONLY with valid JSON (no markdown, no code fences):
       "heading": "Another Section Heading",
       "paragraphs": [
         "Fifth paragraph 60-90 words.",
-        "Sixth paragraph 60-90 words."
+        "Sixth paragraph 60-90 words. May add a second external link here if you reference another outlet by name."
       ]
     },
     {
       "heading": "What This Means for PS6",
       "paragraphs": [
-        "Closing PS6-angle paragraph 60-90 words: why this matters for PS6 fans, Sony strategy, or next-gen implications."
+        "Closing PS6-angle paragraph 60-90 words. No links in this paragraph."
       ]
     }
   ],
