@@ -245,20 +245,54 @@ function textToBlocks(paragraphs, existingArticles = []) {
 
 // ── Duplicate check ───────────────────────────────────────────────────────────
 
-function isDuplicate(title, existingArticles) {
+function isDuplicate(headline, existingArticles, sourceUrl) {
   const stopWords = new Set([
     'about', 'their', 'which', 'there', 'could', 'would', 'should',
     'playstation', 'release', 'looks', 'knows', 'says', 'report',
     'claims', 'latest', 'after', 'before', 'still', 'delay', 'delayed',
+    'this', 'with', 'that', 'from', 'have', 'what', 'will', 'more',
   ])
-  const newWords = new Set(
-    title.toLowerCase().split(/\W+/).filter(w => w.length > 4 && !stopWords.has(w))
-  )
+
+  // Extract proper nouns (capitalised words ≥4 chars) from a string
+  function properNouns(str) {
+    return new Set(
+      str.split(/\s+/).filter(w => /^[A-Z][a-z]/.test(w) && w.length >= 4).map(w => w.toLowerCase())
+    )
+  }
+
+  // Tokenise a slug or title into meaningful keywords
+  function tokens(str) {
+    return new Set(
+      str.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/)
+        .filter(w => w.length >= 3 && !stopWords.has(w))
+    )
+  }
+
+  const newNouns  = properNouns(headline)
+  const newTokens = tokens(headline)
+
   for (const article of existingArticles) {
     if (!article.title) continue
+
+    // Method 1 — same source URL already published
+    if (sourceUrl && article.sourceUrl && article.sourceUrl === sourceUrl) return article.title
+
+    // Method 2 — named entity overlap (≥2 shared proper nouns e.g. "Laufey", "Sony")
+    const existNouns = properNouns(article.title)
+    const nounOverlap = [...newNouns].filter(n => existNouns.has(n)).length
+    if (nounOverlap >= 2) return article.title
+
+    // Method 3 — slug/title token Jaccard similarity > 0.45
+    const existTokens = tokens(article.slug || article.title)
+    const inter = [...newTokens].filter(t => existTokens.has(t)).length
+    const union = new Set([...newTokens, ...existTokens]).size
+    if (union > 0 && inter / union > 0.45) return article.title
+
+    // Method 4 — original keyword overlap (≥4 words >4 chars)
     const existWords = article.title.toLowerCase().split(/\W+/).filter(w => w.length > 4 && !stopWords.has(w))
-    const overlap = existWords.filter(w => newWords.has(w)).length
-    if (overlap >= 4) return article.title
+    const newWords   = [...newTokens].filter(w => w.length > 4)
+    const wordOverlap = existWords.filter(w => newWords.includes(w)).length
+    if (wordOverlap >= 4) return article.title
   }
   return null
 }
@@ -821,7 +855,7 @@ async function run() {
 
     try {
       // Local duplicate check
-      const duplicate = isDuplicate(story.headline, existingArticles)
+      const duplicate = isDuplicate(story.headline, existingArticles, story.sourceUrl)
       if (duplicate) {
         console.log(`   ⏭️  Skipped — too similar to: "${duplicate}"`)
         skipped++
