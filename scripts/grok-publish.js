@@ -252,51 +252,74 @@ Return ONLY a raw JSON object — no markdown, no code fences, nothing before or
 // ── Phase 2: Grok rewrite ─────────────────────────────────────────────────────
 
 async function rewriteStory(story, existingArticles) {
-  // Split articles into pillar guides and regular news for clearer prompting
-  const pillars = existingArticles.filter(a => a.isPillar).slice(0, 10)
+  const pillars  = existingArticles.filter(a =>  a.isPillar).slice(0, 10)
   const recentNews = existingArticles.filter(a => !a.isPillar).slice(0, 10)
 
   const pillarContext = pillars.length
-    ? `\nOUR PILLAR / GUIDE PAGES (evergreen, high-value — link here if the article topic directly relates):\n${pillars.map(a => `  - slug: ${a.slug} | "${a.title}"`).join('\n')}`
+    ? `\nOUR PILLAR / GUIDE PAGES — link only if the sentence topic directly relates:\n${pillars.map(a => `  - slug: ${a.slug} | "${a.title}"`).join('\n')}`
     : ''
-
   const newsContext = recentNews.length
-    ? `\nOUR RECENT NEWS ARTICLES (only link if this new article genuinely continues or references that story):\n${recentNews.map(a => `  - slug: ${a.slug} | "${a.title}"`).join('\n')}`
+    ? `\nOUR RECENT NEWS — link only if this article genuinely continues or references that story:\n${recentNews.map(a => `  - slug: ${a.slug} | "${a.title}"`).join('\n')}`
     : ''
 
-  const prompt = `You are a senior gaming journalist at PS6News.com (2026). Write a full professional news article — minimum 600 words — based on the story below.
+  const prompt = `You are a senior gaming journalist at PS6News.com (2026). Write a high-quality, in-depth news article based on the source below.
 
-WRITING RULES:
+━━ LENGTH ━━
+• Aim for 900–1400 words. If the story has rich detail, expand fully — don't cut it short.
+• More sections = more depth. Add extra sections if the topic warrants it (context, history, implications, industry reaction, comparisons).
+• Every paragraph must be 70-110 words. No one-liners.
+
+━━ WRITING RULES ━━
 1. Base the article ONLY on the source summary. Do not invent facts, specs, quotes, or dates.
 2. Rewrite completely in your own words. No verbatim copying.
 3. Sharp, engaging British English — active voice, strong verbs, no waffle.
-4. Structure: compelling hook intro → developed body with subheadings → PS6-angle closing section.
-5. Every paragraph must be 60-100 words. No one-liner paragraphs.
-6. Name the original source ONCE in the opening paragraph, then write as PS6News original reporting.
-7. If the story is NOT directly about PS6, add a "What This Means for PS6" closing section.
+4. Name the original source ONCE in the opening paragraph, then write as PS6News original reporting.
+5. If story is NOT directly about PS6, add a "What This Means for PS6" closing section.
 
-LINKING RULES — read carefully, this is important:
+━━ COMPARISON TABLES ━━
+Include a comparison table inside a section ONLY when there are at least 3 real, verifiable data points to compare (e.g. specs across consoles, price tiers, release dates across regions/platforms, feature lists).
+DO NOT invent or estimate data for a table — only include confirmed or widely-reported figures.
+If no real comparison data exists, omit the table entirely.
+Add a table to a section using the optional "table" field:
+  "table": {
+    "caption": "Short descriptive caption",
+    "headers": ["Column 1", "Column 2", "Column 3"],
+    "rows": [
+      ["Row 1 Col 1", "Row 1 Col 2", "Row 1 Col 3"],
+      ["Row 2 Col 1", "Row 2 Col 2", "Row 2 Col 3"]
+    ]
+  }
 
-EXTERNAL LINKS — use [[EXTLINK:URL|anchor text]] syntax:
-• ALWAYS link the source on its FIRST mention in the opening paragraph using the source URL below.
-  Example: "According to [[EXTLINK:${story.sourceUrl}|${story.sourceName || 'the report'}]], Sony has..."
-• You MAY add 1-2 more external links if you genuinely reference another credible outlet (IGN, Eurogamer, VGC, Bloomberg, Kotaku, The Verge, Reuters) by name in the text. Only if it reads naturally — never force it.
-• NEVER link to competitor news sites just to link — only when you directly reference their reporting.
-• Link the anchor text to a meaningful phrase (the outlet name, or the specific claim), never bare URLs.
+━━ EXTERNAL LINKS ━━
+Use [[EXTLINK:URL|anchor text]] syntax. Rules:
+• ALWAYS link the source on first mention in the opening paragraph:
+  ✅ GOOD: "[[EXTLINK:${story.sourceUrl}|${story.sourceName || 'the report'}]] reveals that Sony..."
+  ✅ GOOD: "According to [[EXTLINK:${story.sourceUrl}|${story.sourceName || 'the report'}]], the new policy..."
+  ❌ BAD:  "Sony is ending disc support. [[EXTLINK:${story.sourceUrl}|Read the full story here]]." ← never add links like this
+• Add UP TO 3 more external links mid-article when you genuinely reference another credible outlet by name (IGN, Eurogamer, VGC, Bloomberg, Kotaku, The Verge, Reuters, Digital Foundry, GamesIndustry.biz).
+• The link anchor must be a natural in-sentence phrase — the outlet name, or a short meaningful claim.
+  ✅ GOOD: "A separate [[EXTLINK:https://ign.com|IGN]] analysis noted that..."
+  ✅ GOOD: "as [[EXTLINK:https://eurogamer.net|Eurogamer]] reported last month..."
+  ❌ BAD:  "...the news was reported by many outlets. [[EXTLINK:url|Click here]]."
+• Total external links per article: 1-4. Never force extras just to hit a number.
 
-INTERNAL LINKS — use [[LINK:slug|anchor text]] syntax:
-• Only link to one of the pages listed below if the topic you are writing DIRECTLY relates.
-• Maximum 2 internal links per article. Zero is fine — only add them if they genuinely help the reader.
-• Place internal links mid-article where context arises naturally — NEVER in the opening or closing paragraph.
-• The anchor text must be a natural phrase in the sentence, not a forced insertion.
-• NEVER link just to hit a quota. A reader should not notice the link was added by an AI.
+━━ INTERNAL LINKS ━━
+Use [[LINK:slug|anchor text]] syntax. Rules:
+• MAXIMUM 2 per article. Zero is absolutely fine.
+• Only use when the sentence topic DIRECTLY relates to the linked page.
+• The anchor text must sit naturally mid-sentence — never bolted to the end.
+  ✅ GOOD: "Sony's [[LINK:ps6-release-date|anticipated 2027 launch window]] has now been thrown into doubt..."
+  ✅ GOOD: "questions about the [[LINK:ps6-specs|PS6's final hardware spec]] remain unanswered"
+  ❌ BAD:  "We have covered this before. [[LINK:ps6-specs|PS6 specs]]."
+  ❌ BAD:  "...the console's power. For more, see [[LINK:ps6-specs|our specs guide]]." ← too mechanical
+• NEVER in opening or closing paragraph. NEVER just to hit a quota.
 ${pillarContext}
 ${newsContext}
 
-IMAGE PROMPT RULES:
-Generate a 50-80 word AI image prompt for the featured image. It must be safe for work, no real people, no brand logos. Cinematic photorealistic style. Gaming/technology subject matching the article topic. Dark background, dramatic blue/purple neon lighting, ultra detail.
+━━ IMAGE PROMPT ━━
+50-80 words. Safe for work, no real people, no brand logos. Cinematic photorealistic. Gaming/technology subject matching the article topic. Dark background, dramatic blue/purple neon lighting, ultra detail.
 
-SOURCE:
+━━ SOURCE ━━
 Headline: ${story.headline}
 Source URL: ${story.sourceUrl}
 Source name: ${story.sourceName || 'the source'}
@@ -306,43 +329,46 @@ ${story.summary}
 
 Respond ONLY with valid JSON (no markdown, no code fences):
 {
-  "title": "Compelling headline under 70 chars, keyword-first",
+  "title": "Compelling keyword-first headline under 70 chars",
   "slug": "seo-slug-lowercase-hyphens-max-55-chars",
-  "excerpt": "Punchy meta description 130-155 chars with emotional hook or CTA",
+  "excerpt": "130-155 char punchy meta description with emotional hook or CTA",
   "imagePrompt": "Cinematic photorealistic ...",
   "sections": [
     {
       "heading": null,
       "paragraphs": [
-        "Opening paragraph 60-90 words with source attribution and [[EXTLINK:${story.sourceUrl}|${story.sourceName || 'the report'}]] linked naturally.",
-        "Second paragraph 60-90 words expanding on the core claim."
+        "Opening paragraph 70-110 words. Attribute source with [[EXTLINK:${story.sourceUrl}|${story.sourceName || 'the report'}]] woven naturally mid-sentence.",
+        "Second paragraph 70-110 words. Expand on the core claim."
       ]
     },
     {
       "heading": "Relevant Section Heading",
       "paragraphs": [
-        "Third paragraph 60-90 words. Add an internal [[LINK:slug|anchor]] here only if genuinely relevant.",
-        "Fourth paragraph 60-90 words."
-      ]
+        "70-110 words. Weave in an internal [[LINK:slug|natural anchor phrase]] mid-sentence only if genuinely relevant.",
+        "70-110 words."
+      ],
+      "table": null
     },
     {
       "heading": "Another Section Heading",
       "paragraphs": [
-        "Fifth paragraph 60-90 words.",
-        "Sixth paragraph 60-90 words. May add a second external link here if you reference another outlet by name."
-      ]
+        "70-110 words.",
+        "70-110 words. Reference another outlet naturally: [[EXTLINK:url|Outlet Name]] noted that..."
+      ],
+      "table": null
     },
     {
       "heading": "What This Means for PS6",
       "paragraphs": [
-        "Closing PS6-angle paragraph 60-90 words. No links in this paragraph."
-      ]
+        "70-110 words closing PS6-angle paragraph. No links here."
+      ],
+      "table": null
     }
   ],
   "keyTakeaways": [
-    "Specific factual point from the source",
-    "Another specific factual point",
-    "Third specific factual point"
+    "Specific verifiable fact from the source",
+    "Another specific fact",
+    "Third specific fact"
   ]
 }`
 
@@ -555,6 +581,40 @@ async function publishToSanity(data, authorId, categoryId, imageAssetId, existin
         })
       }
       body.push(...textToBlocks(section.paragraphs || [], existingArticles))
+
+      // Comparison table — only if Grok provided real data (headers + at least 1 row)
+      const t = section.table
+      if (t && Array.isArray(t.headers) && t.headers.length && Array.isArray(t.rows) && t.rows.length) {
+        // Optional caption as an H3
+        if (t.caption) {
+          body.push({
+            _type: 'block',
+            _key: randomKey(),
+            style: 'h3',
+            markDefs: [],
+            children: [{ _type: 'span', _key: randomKey(), text: t.caption, marks: [] }],
+          })
+        }
+        // @sanity/table format
+        body.push({
+          _type: 'table',
+          _key: randomKey(),
+          rows: [
+            // Header row first
+            {
+              _type: 'tableRow',
+              _key: randomKey(),
+              cells: t.headers.map(String),
+            },
+            // Data rows
+            ...t.rows.map(row => ({
+              _type: 'tableRow',
+              _key: randomKey(),
+              cells: (Array.isArray(row) ? row : [row]).map(String),
+            })),
+          ],
+        })
+      }
     }
   }
 
