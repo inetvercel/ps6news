@@ -435,6 +435,8 @@ YOUR BEAT (cast the net wide, but every story must ultimately connect to next-ge
 
 RULE: A story about Switch 2, Xbox Helix, or general industry/tech news is fair game AS LONG AS the article explicitly ties it back to PS6 or next-gen PlayStation relevance (e.g. competitive pressure, technology PS6 might adopt, market conditions affecting Sony's plans). Do not cover competitor/industry news in isolation with no PlayStation angle.
 
+CRITICAL: The PS6 has NOT launched — it cannot be purchased, played, or experience outages. If a story is actually about PS5, PSN, or another current platform, the headline field MUST correctly name that current platform, never "PS6". The PS6 angle should only be a forward-looking implication, never presented as if PS6 already exists in the market.
+
 SOURCING RULES:
 - Investigate each candidate story using MULTIPLE credible sources where possible.
 - Prefer PRIMARY sources first: official PlayStation/Sony/Nintendo/Microsoft statements, developer/publisher statements, investor materials, official trailers, verified social accounts.
@@ -532,6 +534,11 @@ Every paragraph 60-110 words. No one-liners.
 - Confident but never overstate uncertain information.
 - No filler, no generic AI phrases, no repetition, no overblown claims.
 - Base all claims on the source summary and your own verification. Do not invent facts, quotes, or figures.
+
+━━ CRITICAL FACT-CHECK: PS6 HAS NOT LAUNCHED ━━
+The PlayStation 6 does not exist in the market yet — it has not released, cannot be purchased, and cannot be played. NEVER write a headline, title, or claim implying PS6 is currently live, playable, purchasable, down, outaged, or experiencing any real-time issue.
+If the underlying event (outage, server issue, price change, bug, sale) is actually about PS5, PSN, or another CURRENT platform, the headline and body MUST correctly name that current platform (e.g. "PS5", "PlayStation Network") — NOT PS6.
+The PS6 angle belongs ONLY in analysis sections like "What This Means for PS6" (e.g. "if PS6 relies on the same PSN infrastructure, an outage like this could carry over"). Never blur the current event with a false PS6 framing in the title or opening paragraph.
 
 ━━ COMPARISON TABLES ━━
 Include a table whenever the topic involves historical data, prices, specs, or timelines.
