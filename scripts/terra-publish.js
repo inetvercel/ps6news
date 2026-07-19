@@ -126,11 +126,11 @@ const MAX_ARTICLES = countArg ? Math.max(1, parseInt(countArg.split('=')[1], 10)
 
 // ── Terra call helper (Responses API) ─────────────────────────────────────────
 
-async function callTerra(promptText) {
+async function callTerra(promptText, { webSearch = true } = {}) {
   const response = await openai.responses.create({
     model: TERRA_MODEL,
     reasoning: { effort: TERRA_REASONING_EFFORT },
-    tools: [{ type: 'web_search' }],
+    ...(webSearch ? { tools: [{ type: 'web_search' }] } : {}),
     input: [{ role: 'user', content: promptText }],
   })
 
@@ -1022,4 +1022,10 @@ module.exports = {
   getDefaultAuthorId,
   getCategoryMap,
   isDuplicate,
+  callTerra,
+  parseTerraJson,
+  randomKey,
+  textToBlocks,
+  bulletBlocks,
+  sanity,
 }
