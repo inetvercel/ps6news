@@ -395,16 +395,20 @@ async function discoverStories(existingArticles, count) {
 
   const prompt = `You are the lead news editor for PS6News.com, a dedicated PlayStation 6 and next-generation gaming news site. Search the web now and identify genuinely new, credible, and relevant news stories from the last 72 hours.
 
-YOUR BEAT:
+YOUR BEAT (cast the net wide, but every story must ultimately connect to next-gen PlayStation/PS6 relevance):
 - PlayStation 6 / PS6 — specs, price, release date, leaks, official announcements
-- Sony Interactive Entertainment and PlayStation hardware strategy
-- Next-generation consoles, including the future Xbox
+- Sony Interactive Entertainment and PlayStation hardware strategy, first-party studios
+- Nintendo Switch 2 — sales, software lineup, hardware revisions, competitive positioning (frame as: what does this mean for Sony's next-gen strategy / the console market PS6 is entering?)
+- Xbox Helix (or whatever Microsoft's next-gen hardware project is called) — specs, strategy, cloud/Windows integration, handheld plans (frame as: how does this affect the competitive landscape PS6 will launch into?)
 - Major upcoming games, announcements, studio acquisitions/closures, leaks, and industry shifts relevant to next-gen gaming
-- Gaming hardware, cloud gaming, AI in games, engines, graphics tech, and major publisher news — ONLY where clearly relevant to PS6News readers
+- Gaming hardware, cloud gaming, AI in games, engines, graphics tech (DLSS/FSR/ray tracing/upscaling), chip/GPU industry news, and major publisher news — where relevant to what next-gen consoles (PS6 included) will look like or compete with
+- Broader console market trends (pricing, supply chain, chip shortages, tariffs, semiconductor news) that could shape PS6's cost, timing, or strategy
+
+RULE: A story about Switch 2, Xbox Helix, or general industry/tech news is fair game AS LONG AS the article explicitly ties it back to PS6 or next-gen PlayStation relevance (e.g. competitive pressure, technology PS6 might adopt, market conditions affecting Sony's plans). Do not cover competitor/industry news in isolation with no PlayStation angle.
 
 SOURCING RULES:
 - Investigate each candidate story using MULTIPLE credible sources where possible.
-- Prefer PRIMARY sources first: official PlayStation/Sony statements, developer/publisher statements, investor materials, official trailers, verified social accounts.
+- Prefer PRIMARY sources first: official PlayStation/Sony/Nintendo/Microsoft statements, developer/publisher statements, investor materials, official trailers, verified social accounts.
 - Use reputable games journalism (IGN, Eurogamer, VGC, The Verge, Bloomberg, Reuters, GamesIndustry.biz, Digital Foundry, TechRadar, etc.) for reporting and context.
 - Do NOT include a story just because one outlet posted it — verify it is genuinely new, useful, and relevant, not filler or a repost of old information.
 - Skip anything that closely overlaps with the ALREADY COVERED list below.
@@ -488,7 +492,8 @@ Every paragraph 60-110 words. No one-liners.
 1. Strong, click-worthy but accurate headline
 2. Short intro explaining what happened and why it matters
 3. Clear subheadings across the body
-4. Original analysis — implications for the PS6, PlayStation strategy, next-gen gaming, developers, or players
+4. Original analysis — implications for the PS6, PlayStation strategy, next-gen gaming, developers, or players.
+   If this story is primarily about a competitor (Switch 2, Xbox Helix) or general industry/tech news rather than PlayStation directly, this MUST include a clearly headed section such as "What This Means for PS6" that draws an explicit, substantive connection — not a token one-liner.
 5. "What We Know" — confirmed, sourced facts only (whatWeKnow field)
 6. "What Remains Unclear" — open questions, caveats, unverified claims (whatRemainsUnclear field; leave empty array only if genuinely nothing is unclear)
 
