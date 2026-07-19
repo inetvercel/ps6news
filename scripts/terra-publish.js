@@ -197,12 +197,41 @@ function parseParagraphWithLinks(text, existingArticles) {
   }
 }
 
+// ── Citation sanitizer ────────────────────────────────────────────────────────
+// Terra's web_search tool sometimes auto-appends markdown citations like
+// "([blog.playstation.com](https://...))" directly into paragraph text.
+// Strip these out — they render as literal text in Sanity, not real links.
+
+function stripCitationArtifacts(text) {
+  if (!text) return text
+  return text
+    // ([label](url)) — parenthesised markdown link citation
+    .replace(/\(\s*\[[^\]]*\]\(https?:\/\/[^)]+\)\s*\)/g, '')
+    // [label](url) — bare markdown link
+    .replace(/\[[^\]]*\]\(https?:\/\/[^)]+\)/g, '')
+    // (https://...) — bare parenthesised URL citation
+    .replace(/\(\s*https?:\/\/[^\s)]+\s*\)/g, '')
+    // Collapse resulting double spaces / stray punctuation spacing
+    .replace(/\s{2,}/g, ' ')
+    .replace(/\s+([.,;:])/g, '$1')
+    .trim()
+}
+
+function sanitizeSections(sections) {
+  return (sections || []).map(section => ({
+    ...section,
+    paragraphs: (section.paragraphs || []).map(stripCitationArtifacts),
+  }))
+}
+
 // ── Deterministic link injection ──────────────────────────────────────────────
 // Injects source, outlet, and internal pillar links into the generated article.
 // Target: 1-3 external links (incl. mandatory source link), 2-4 internal links.
 
 function injectArticleLinks(data, story, existingArticles) {
   if (!data.sections?.length) return data
+
+  data = { ...data, sections: sanitizeSections(data.sections) }
 
   const MAX_EXT  = 3
   const MAX_INT  = 4
@@ -515,7 +544,8 @@ STRONG TRIGGERS:
 Only use real, verifiable, or widely-reported figures. Label projections "Projected" or "Estimated". Skip the table entirely if you don't have enough real data — never invent numbers.
 
 ━━ LINKS ━━
-Write clean, flowing prose only. Do NOT embed any link tokens, [[brackets]], or special syntax.
+Write clean, flowing prose only. Do NOT embed any link tokens, [[brackets]], markdown links like [text](url), citation markers, or any special syntax anywhere in the paragraph text — not even at the end of a paragraph.
+This applies even though you are using web search to verify facts: strip out ALL citation formatting, footnotes, and source markers from the final paragraph text. Paragraphs must read as pure, clean prose with absolutely no brackets or parentheses containing URLs.
 Links (2-4 internal, 1-3 external) are added automatically after you write — just write natural sentences that would plausibly carry a link.
 
 ━━ IMAGE PROMPT ━━
