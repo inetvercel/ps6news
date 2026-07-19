@@ -313,6 +313,26 @@ function injectArticleLinks(data, story, existingArticles) {
     return { ...section, paragraphs }
   })
 
+  // ── Fallback: no natural pillar-topic match found — link the "What This
+  // Means for PS6" section's first PS6 mention to the most relevant pillar page,
+  // so competitor/analysis stories still get at least one internal link.
+  if (intCount === 0 && pillarCandidates.length > 0) {
+    const psSectionIdx = processedSections.findIndex(s => /what (this|it) means for ps6/i.test(s.heading || ''))
+    if (psSectionIdx !== -1) {
+      const fallback = pillarCandidates[0]
+      const paragraphs = processedSections[psSectionIdx].paragraphs
+      for (let i = 0; i < paragraphs.length; i++) {
+        if (paragraphs[i].includes('[[LINK:')) continue
+        const ps6Re = /\bPS6\b/
+        if (ps6Re.test(paragraphs[i])) {
+          paragraphs[i] = paragraphs[i].replace(ps6Re, m => `[[LINK:${fallback.slug}|${m}]]`)
+          intCount++
+          break
+        }
+      }
+    }
+  }
+
   console.log(`   🔗 Links injected: ${extCount} external, ${intCount} internal`)
   return { ...data, sections: processedSections }
 }
