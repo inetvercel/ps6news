@@ -1011,4 +1011,15 @@ if (require.main === module) {
   })
 }
 
-module.exports = { run }
+module.exports = {
+  run,
+  rewriteStory,
+  injectArticleLinks,
+  getImageAssetId,
+  publishToSanity,
+  fetchExistingArticles,
+  slugExists,
+  getDefaultAuthorId,
+  getCategoryMap,
+  isDuplicate,
+}
