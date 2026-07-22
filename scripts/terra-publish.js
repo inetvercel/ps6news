@@ -366,9 +366,21 @@ function isDuplicate(headline, existingArticles, sourceUrl) {
     'this', 'with', 'that', 'from', 'have', 'what', 'will', 'more',
   ])
 
+  // Generic words that are often title-cased in headlines but carry no
+  // story-identity — matching on these creates false-positive duplicates
+  // (e.g. "Xbox ... Strategy" matching a different Xbox strategy story).
+  const genericNouns = new Set([
+    'strategy', 'platform', 'growth', 'console', 'hardware', 'library',
+    'gaming', 'games', 'digital', 'launch', 'launches', 'update', 'news',
+    'players', 'sales', 'market', 'industry', 'studios', 'exclusives',
+  ])
+
   function properNouns(str) {
     return new Set(
-      str.split(/\s+/).filter(w => /^[A-Z][a-z]/.test(w) && w.length >= 4).map(w => w.toLowerCase())
+      str.split(/\s+/)
+        .filter(w => /^[A-Z][a-z]/.test(w) && w.length >= 4)
+        .map(w => w.toLowerCase())
+        .filter(w => !genericNouns.has(w))
     )
   }
 
