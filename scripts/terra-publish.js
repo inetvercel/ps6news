@@ -775,7 +775,7 @@ async function generateAiImage(imagePrompt) {
     const response = await openai.images.generate({
       model: TERRA_IMAGE_MODEL,
       prompt: imagePrompt,
-      size: '1024x1024',
+      size: '1536x1024',
     })
     const imgData = response.data?.[0]
     if (!imgData) throw new Error('Empty image response')
@@ -797,7 +797,7 @@ async function generateAiImage(imagePrompt) {
 }
 
 function buildTopicImagePrompt(title, summary) {
-  const style = 'cinematic photorealistic, dark studio background, dramatic blue and purple neon lighting, ultra-detailed 4K, NO TEXT, no words, no letters, no captions, no watermarks, no UI elements, no brand logos, no real people'
+  const style = 'cinematic photorealistic, wide landscape composition, dark studio background, dramatic blue and purple neon lighting, ultra-detailed 4K, NO TEXT, no words, no letters, no captions, no watermarks, no UI elements, no brand logos, no real people'
   return `${title}. ${style}`
 }
 
