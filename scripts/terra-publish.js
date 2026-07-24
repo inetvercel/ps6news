@@ -590,17 +590,29 @@ Links (2-4 internal, 1-3 external) are added automatically after you write — j
 ━━ IMAGE PROMPT ━━
 Generate a DETAILED, TOPIC-SPECIFIC image prompt (50-100 words) that visually represents THIS article's specific subject matter — not a generic gaming image.
 
+CRITICAL: The image MUST depict the ACTUAL subject of the article, NOT a PS6 concept. This is a PS6 news site but most articles are about OTHER platforms, industry events, or current-gen hardware. Do NOT default to PS6 console imagery unless the article is specifically about PS6 hardware.
+
+Match the image to the article's real subject:
+- Xbox article → show a tall black rectangular gaming console (Xbox Series X style) with relevant visual elements
+- Switch 2 article → show a handheld gaming console with detachable controllers (Switch 2 style)
+- PS5/PSN article → show a white and black console with blue lighting (PS5 style)
+- PS6 hardware/specs article → show a futuristic next-gen console concept
+- Industry/market article → show relevant business/tech imagery (charts, money, factory, chips)
+- Game article → show a scene or item from the game's world (but no characters or logos)
+- Cloud streaming article → show a console or device with cloud/streaming visual elements (data streams, wifi signals, cloud icon)
+
 The image prompt MUST:
-- Describe a concrete visual scene directly tied to the article's topic (e.g. if about Switch 2 sales, describe a Switch 2 console with upward sales charts/arrows; if about memory shortages, show semiconductor wafers and RAM modules in a factory setting; if about a PSN outage, show a disconnected PlayStation controller with a broken connection icon)
+- Describe a concrete visual scene directly tied to the article's topic
 - Include the instruction: "NO TEXT, no words, no letters, no captions, no watermarks, no UI elements anywhere in the image"
 - Specify: cinematic photorealistic style, dark background, dramatic blue/purple neon lighting, ultra-detailed, 4K
-- Be safe for work: no real people, no brand logos (describe devices generically if needed, e.g. "a futuristic handheld game console" rather than naming a brand)
-- Match the PS6News visual identity: sleek, modern, tech-focused, dark aesthetic with neon accents
+- Be safe for work: no real people, no brand logos (describe devices by their physical shape/form factor, e.g. "a tall black vertical gaming console" not "Xbox Series X")
+- Keep the PS6News visual identity only in the LIGHTING and AESTHETIC (dark, neon, cinematic) — NOT in the subject matter
 
 Examples of good topic-specific prompts:
-- Switch 2 sales story → "A sleek handheld game console on a pedestal with glowing upward arrows and rising bar charts surrounding it, cinematic photorealistic, dark studio background, blue and purple neon lighting, NO TEXT, no words, no letters, ultra-detailed 4K"
+- Switch 2 sales story → "A sleek handheld game console with detachable controllers on a pedestal with glowing upward arrows and rising bar charts surrounding it, cinematic photorealistic, dark studio background, blue and purple neon lighting, NO TEXT, no words, no letters, ultra-detailed 4K"
+- Xbox cloud streaming story → "A tall black vertical gaming console with glowing cloud and streaming data symbols flowing from it, wifi signals radiating outward, cinematic photorealistic, dark studio background, blue and purple neon lighting, NO TEXT, no words, no letters, ultra-detailed 4K"
 - Memory shortage story → "Rows of semiconductor wafers and RAM modules on a factory production line, some slots empty and dark, dramatic lighting, cinematic photorealistic, dark industrial setting, blue neon glow, NO TEXT, no words, no letters, ultra-detailed 4K"
-- PSN outage story → "A game controller on a dark desk with a glowing broken connection symbol above it, fractured network lines dissolving into particles, cinematic photorealistic, dark background, blue and purple neon lighting, NO TEXT, no words, no letters, ultra-detailed 4K"
+- PSN outage story → "A white and black console with a glowing broken connection symbol above it, fractured network lines dissolving into particles, cinematic photorealistic, dark background, blue and purple neon lighting, NO TEXT, no words, no letters, ultra-detailed 4K"
 
 ━━ SOURCE MATERIAL ━━
 Headline: ${story.headline}
