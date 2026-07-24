@@ -56,54 +56,100 @@ const KNOWN_OUTLET_URLS = {
   'Axios':                 'https://www.axios.com',
 }
 
-// Pillar topic patterns → used to match slugs from existing articles for internal links
-const PILLAR_TOPIC_PATTERNS = [
-  {
-    topic:     'release',
-    pillarRe:  /release.?date|when.*(ps6|playstation.?6)|launch.*(date|window|year|timing)/i,
-    contentRe: /\b(release date|launch date|launch window|release window|release timing|expected launch|planned launch|launch year)\b/i,
-  },
-  {
-    topic:     'specs',
-    pillarRe:  /specs?|specification|hardware|gpu|teraflop|what.*(inside|under)/i,
-    contentRe: /\b(hardware specs?|technical specs?|GPU|teraflops?|RDNA|Zen \d|SSD speed|processing power|raw performance)\b/i,
-  },
-  {
-    topic:     'price',
-    pillarRe:  /price|cost|how.much|afford/i,
-    contentRe: /\b(retail price|launch price|price point|how much.*PS6|PS6.*price|cost of.*PS6|pricing|afford\w*)\b/i,
-  },
-  {
-    topic:     'games',
-    pillarRe:  /launch.?game|launch.?title|first.?party|exclusiv/i,
-    contentRe: /\b(launch games?|launch titles?|launch lineup|launch library|first.party (?:games?|titles?)|PS6 exclusives?)\b/i,
-  },
-  {
-    topic:     'controller',
-    pillarRe:  /controller|dualsense|dual.?sense|haptic/i,
-    contentRe: /\b(DualSense|PS6 controller|adaptive triggers?|haptic feedback|next.gen controller)\b/i,
-  },
-  {
-    topic:     'backcompat',
-    pillarRe:  /backward.?compat|back.?compat|legacy.?game/i,
-    contentRe: /\b(backward compat\w*|back.compat\w*|play PS[45] games? on|legacy games?)\b/i,
-  },
-  {
-    topic:     'disc',
-    pillarRe:  /disc|physical|disk.?drive|optical/i,
-    contentRe: /\b(disc drive|physical (?:media|games?|disc|edition)|disc.?less|digital.?only)\b/i,
-  },
-  {
-    topic:     'handheld',
-    pillarRe:  /handheld|portable|ps6.?go|ps.?portable/i,
-    contentRe: /\b(handheld|portable PlayStation|PS6 portable|PS6 Go|PlayStation handheld)\b/i,
-  },
-  {
-    topic:     'design',
-    pillarRe:  /design|look.?like|appearance|concept|aesthetic/i,
-    contentRe: /\b(PS6 design|what.*PS6 looks? like|console design|form factor|aesthetic)\b/i,
-  },
+// ── Internal link matching ───────────────────────────────────────────────────
+// Extracts meaningful keywords from existing article titles and uses them to
+// find natural, relevant internal link opportunities in new article text.
+
+// Stop words removed from keyword extraction (too generic to be useful)
+const LINK_STOP_WORDS = new Set([
+  'the','a','an','and','or','but','for','to','of','in','on','at','by','with','from',
+  'is','are','was','were','be','been','being','have','has','had','do','does','did',
+  'will','would','could','should','may','might','must','can','this','that','these',
+  'those','it','its','they','them','their','there','here','what','which','who','when',
+  'where','why','how','all','any','both','each','few','more','most','other','some',
+  'such','no','nor','not','only','own','same','so','than','too','very','just','about',
+  'above','after','again','against','before','below','during','further','once','up',
+  'down','out','off','over','under','again','then','now','new','news','ps6news','report',
+  'says','claims','reveals','announces','details','explains','shares','updates','latest',
+  'after','amid','amidst','while','during','following','ahead','behind','beyond',
+  'could','would','should','might','may','must','also','still','even','very','really',
+  'game','gaming','video','console','playstation','sony','microsoft','nintendo',
+  'year','month','week','day','time','today','yesterday','tomorrow','tonight',
+  'first','second','third','last','next','previous','former','latter',
+  'one','two','three','four','five','six','seven','eight','nine','ten',
+  'good','bad','great','best','worst','better','worse','big','small','large','little',
+  'high','low','long','short','old','young','early','late','near','far',
+  'get','got','make','made','take','took','give','gave','go','went','come','came',
+  'see','saw','know','knew','think','thought','say','said','tell','told','ask','asked',
+  'use','used','find','found','work','worked','look','looked','seem','seemed',
+  'feel','felt','try','tried','help','helped','want','need','like','love','hate',
+])
+
+// Multi-word phrases that are strong link signals when found in article text
+const PHRASE_LINKS = [
+  { re: /\b(release date|launch date|launch window|release window|expected launch|planned launch)\b/i, topic: 'release' },
+  { re: /\b(hardware specs?|technical specs?|teraflops?|RDNA|Zen \d|SSD speed|processing power|raw performance)\b/i, topic: 'specs' },
+  { re: /\b(retail price|launch price|price point|how much.*PS6|PS6.*price|cost of.*PS6|pricing|afford\w*)\b/i, topic: 'price' },
+  { re: /\b(launch games?|launch titles?|launch lineup|launch library|first.party (?:games?|titles?)|PS6 exclusives?)\b/i, topic: 'games' },
+  { re: /\b(DualSense|PS6 controller|adaptive triggers?|haptic feedback|next.gen controller)\b/i, topic: 'controller' },
+  { re: /\b(backward compat\w*|back.compat\w*|play PS[45] games? on|legacy games?)\b/i, topic: 'backcompat' },
+  { re: /\b(disc drive|physical (?:media|games?|disc|edition)|disc.?less|digital.?only)\b/i, topic: 'disc' },
+  { re: /\b(handheld|portable PlayStation|PS6 portable|PS6 Go|PlayStation handheld)\b/i, topic: 'handheld' },
+  { re: /\b(PS6 design|what.*PS6 looks? like|console design|form factor|aesthetic)\b/i, topic: 'design' },
 ]
+
+// Extract meaningful keywords (2+ chars, not stop words) from an article title
+function extractTitleKeywords(title) {
+  if (!title) return []
+  const words = title.match(/\b[A-Za-z0-9][A-Za-z0-9'-]+\b/g) || []
+  return words
+    .filter(w => w.length >= 3 && !LINK_STOP_WORDS.has(w.toLowerCase()))
+    .map(w => w.toLowerCase())
+}
+
+// Build a regex that matches any of the given keywords as whole words
+function buildKeywordRe(keywords) {
+  if (!keywords.length) return null
+  const escaped = keywords.map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+  return new RegExp(`\\b(${escaped.join('|')})\\b`, 'i')
+}
+
+// Score how relevant an existing article is to the new article's text.
+// Returns { score, matchedKeywords, keywordRe } or null if no match.
+function scoreArticleRelevance(existingArticle, newText) {
+  const keywords = extractTitleKeywords(existingArticle.title)
+  if (keywords.length === 0) return null
+
+  const lowerText = newText.toLowerCase()
+  const matched = keywords.filter(k => lowerText.includes(k))
+  if (matched.length === 0) return null
+
+  // Score: number of matched keywords, with bonus for matching rarer/longer keywords
+  let score = matched.length
+  for (const k of matched) {
+    if (k.length >= 6) score += 0.5  // longer keywords are more specific
+  }
+
+  // Bonus for pillar articles (evergreen content)
+  if (existingArticle.isPillar) score += 1
+
+  return { score, matchedKeywords: matched, keywordRe: buildKeywordRe(matched) }
+}
+
+// Find the best existing article to link to, given the new article's full text.
+// Returns a sorted array of { article, score, matchedKeywords, keywordRe }.
+function findInternalLinkCandidates(existingArticles, newText, excludeSlug) {
+  const candidates = []
+  for (const article of existingArticles) {
+    if (article.slug === excludeSlug) continue
+    const result = scoreArticleRelevance(article, newText)
+    if (result && result.score >= 1.5) {
+      candidates.push({ ...result, article })
+    }
+  }
+  candidates.sort((a, b) => b.score - a.score)
+  return candidates
+}
 
 // ── Clients ──────────────────────────────────────────────────────────────────
 
@@ -241,13 +287,51 @@ function injectArticleLinks(data, story, existingArticles) {
   const linkedOutlets = new Set()
   const linkedSlugs   = new Set()
 
-  const pillarCandidates = [] // { re, slug }
-  for (const pattern of PILLAR_TOPIC_PATTERNS) {
-    const match = existingArticles.find(a =>
-      a.isPillar && (pattern.pillarRe.test(a.title || '') || pattern.pillarRe.test(a.slug || ''))
+  // ── Build internal link candidates from ALL existing articles ──────────────
+  // Combines pillar phrase-matching + keyword-based article matching.
+  // Each candidate: { slug, re, source: 'pillar'|'keyword', score, title }
+  const fullText = data.sections.map(s => (s.paragraphs || []).join(' ')).join(' ')
+  const internalCandidates = []
+
+  // 3a. Phrase-based pillar matching (evergreen topics)
+  for (const phraseLink of PHRASE_LINKS) {
+    const pillarMatch = existingArticles.find(a =>
+      a.isPillar && (
+        new RegExp(phraseLink.topic, 'i').test(a.title || '') ||
+        new RegExp(phraseLink.topic, 'i').test(a.slug || '')
+      )
     )
-    if (match) pillarCandidates.push({ re: pattern.contentRe, slug: match.slug })
+    if (pillarMatch && !internalCandidates.find(c => c.slug === pillarMatch.slug)) {
+      internalCandidates.push({
+        slug: pillarMatch.slug,
+        re: phraseLink.re,
+        source: 'pillar',
+        score: 10,
+        title: pillarMatch.title,
+      })
+    }
   }
+
+  // 3b. Keyword-based matching against ALL articles (pillars + news)
+  const keywordCandidates = findInternalLinkCandidates(existingArticles, fullText, data.slug)
+  for (const kc of keywordCandidates) {
+    if (internalCandidates.find(c => c.slug === kc.article.slug)) continue
+    internalCandidates.push({
+      slug: kc.article.slug,
+      re: kc.keywordRe,
+      source: 'keyword',
+      score: kc.score,
+      title: kc.article.title,
+      matchedKeywords: kc.matchedKeywords,
+    })
+  }
+
+  // Sort: pillars first (by score), then keyword matches (by score)
+  internalCandidates.sort((a, b) => {
+    if (a.source === 'pillar' && b.source !== 'pillar') return -1
+    if (a.source !== 'pillar' && b.source === 'pillar') return 1
+    return b.score - a.score
+  })
 
   const totalSections = data.sections.length
 
@@ -292,13 +376,20 @@ function injectArticleLinks(data, story, existingArticles) {
         }
       }
 
-      // ── 3. Internal pillar links — only mid-article, one per pillar slug ───
+      // ── 3. Internal links — mid-article, one per candidate slug ────────────
+      // Tries each candidate in priority order. Links on the first natural
+      // keyword match found in this paragraph that isn't already linked.
       if (!isFirst && !isLast && intCount < MAX_INT) {
-        for (const candidate of pillarCandidates) {
+        for (const candidate of internalCandidates) {
           if (linkedSlugs.has(candidate.slug)) continue
           if (text.includes('[[LINK:')) continue
-          if (candidate.re.test(text)) {
-            const singleRe = new RegExp(candidate.re.source, 'i')
+
+          // For pillar candidates, use the phrase regex
+          // For keyword candidates, use the keyword regex
+          const re = candidate.re
+          if (re && re.test(text)) {
+            // Find the best match — prefer longer matches (more specific)
+            const singleRe = new RegExp(re.source, 'i')
             text = text.replace(singleRe, (m) => `[[LINK:${candidate.slug}|${m}]]`)
             linkedSlugs.add(candidate.slug)
             intCount++
@@ -313,13 +404,34 @@ function injectArticleLinks(data, story, existingArticles) {
     return { ...section, paragraphs }
   })
 
-  // ── Fallback: no natural pillar-topic match found — link the "What This
-  // Means for PS6" section's first PS6 mention to the most relevant pillar page,
-  // so competitor/analysis stories still get at least one internal link.
-  if (intCount === 0 && pillarCandidates.length > 0) {
+  // ── Fallback: if we still have no internal links, try to link the first
+  // natural keyword match from the best candidate anywhere in the article.
+  if (intCount === 0 && internalCandidates.length > 0) {
+    for (const candidate of internalCandidates.slice(0, 3)) {
+      for (const section of processedSections) {
+        const paragraphs = section.paragraphs
+        for (let i = 0; i < paragraphs.length; i++) {
+          if (paragraphs[i].includes('[[LINK:')) continue
+          const re = candidate.re
+          if (re && re.test(paragraphs[i])) {
+            const singleRe = new RegExp(re.source, 'i')
+            paragraphs[i] = paragraphs[i].replace(singleRe, (m) => `[[LINK:${candidate.slug}|${m}]]`)
+            linkedSlugs.add(candidate.slug)
+            intCount++
+            break
+          }
+        }
+        if (intCount > 0) break
+      }
+      if (intCount >= MAX_INT) break
+    }
+  }
+
+  // ── Second fallback: link "PS6" in the analysis section to the top candidate
+  if (intCount === 0 && internalCandidates.length > 0) {
     const psSectionIdx = processedSections.findIndex(s => /what (this|it) means for ps6/i.test(s.heading || ''))
     if (psSectionIdx !== -1) {
-      const fallback = pillarCandidates[0]
+      const fallback = internalCandidates[0]
       const paragraphs = processedSections[psSectionIdx].paragraphs
       for (let i = 0; i < paragraphs.length; i++) {
         if (paragraphs[i].includes('[[LINK:')) continue
@@ -333,7 +445,13 @@ function injectArticleLinks(data, story, existingArticles) {
     }
   }
 
+  const linkedTitles = internalCandidates
+    .filter(c => linkedSlugs.has(c.slug))
+    .map(c => c.title)
   console.log(`   🔗 Links injected: ${extCount} external, ${intCount} internal`)
+  if (linkedTitles.length) {
+    console.log(`   🔗 Internal links to: ${linkedTitles.join(' | ')}`)
+  }
   return { ...data, sections: processedSections }
 }
 
@@ -422,7 +540,7 @@ const PILLAR_KEYWORDS = /specs|release.?date|price|cost|games|features|design|ru
 
 async function fetchExistingArticles() {
   const articles = await sanity.fetch(
-    `*[_type == "article"] | order(publishedAt desc) [0..49]{ _id, title, "slug": slug.current }`
+    `*[_type == "article"] | order(publishedAt desc) [0..99]{ _id, title, "slug": slug.current }`
   )
   return articles.map(a => ({
     ...a,
