@@ -797,86 +797,8 @@ async function generateAiImage(imagePrompt) {
 }
 
 function buildTopicImagePrompt(title, summary) {
-  const text = `${title} ${summary || ''}`.toLowerCase()
   const style = 'cinematic photorealistic, dark studio background, dramatic blue and purple neon lighting, ultra-detailed 4K, NO TEXT, no words, no letters, no captions, no watermarks, no UI elements, no brand logos, no real people'
-
-  // Detect platform / topic from the actual article content
-  const isXbox       = /\bxbox\b|game pass|microsoft|halo|forza|phil spencer/.test(text)
-  const isSwitch     = /\bswitch\s?2\b|nintendo|splatoon|mario|zelda|metroid|kirby/.test(text)
-  const isPS5_PSN    = /\bps5\b|playstation\s?5|\bpsn\b|playstation network|dualsense/.test(text)
-  const isPS6HW      = /\bps6\b|playstation\s?6/.test(text) && (/hardware|spec|design|console|chip|gpu|cpu|ram|teraflop|release date|launch|price|cost/.test(text))
-  const isCloud      = /cloud|streaming|game streaming|remote play/.test(text)
-  const isTariff     = /tariff|trade war|customs|import|supply chain|manufacturing/.test(text)
-  const isMemory     = /memory|ram|dram|semiconductor|chip shortage|wafer|fabrication/.test(text)
-  const isVR         = /\bvr\b|virtual reality|meta quest|playstation vr|psvr/.test(text)
-  const isLayoff     = /layoff|redundan|closure|studio shut|job cut|restructur/.test(text)
-  const isSales      = /sales|sold|units shipped|market share|revenue|earnings|financial/.test(text)
-  const isGameDev    = /game engine|unreal engine|unity|game development|game dev/.test(text)
-
-  // ── Competitor platforms FIRST (before PS6 check) ──
-  // Most articles mention PS6 somewhere in analysis, so check the
-  // actual primary subject first to avoid false PS6 concept matches.
-
-  // Xbox articles
-  if (isXbox && isCloud) {
-    return `A tall black vertical gaming console with glowing cloud and streaming data symbols flowing from it, wifi signals radiating outward, ${style}`
-  }
-  if (isXbox && isVR) {
-    return `A tall black vertical gaming console next to a sleek white VR headset, glowing connection lines between them, ${style}`
-  }
-  if (isXbox) {
-    return `A tall black vertical gaming console on a dark pedestal with subtle green neon glow, ${style}`
-  }
-
-  // Switch 2 / Nintendo articles
-  if (isSwitch && isSales) {
-    return `A sleek handheld game console with detachable controllers on a pedestal with glowing upward arrows and rising bar charts surrounding it, ${style}`
-  }
-  if (isSwitch && isTariff) {
-    return `A handheld game console with detachable controllers beside a judge's gavel and legal documents, scales of justice in the background, ${style}`
-  }
-  if (isSwitch) {
-    return `A sleek handheld game console with detachable controllers, dark studio pedestal, ${style}`
-  }
-
-  // PS5 / PSN articles
-  if (isPS5_PSN && /outage|down|server|connection|error/.test(text)) {
-    return `A white and black console with a glowing broken connection symbol above it, fractured network lines dissolving into particles, ${style}`
-  }
-  if (isPS5_PSN) {
-    return `A white and black console with blue lighting on a dark pedestal, ${style}`
-  }
-
-  // Industry / business topics (check before PS6 since these often mention PS6 too)
-  if (isMemory) {
-    return `Rows of semiconductor wafers and RAM modules on a factory production line, some slots empty and dark, dramatic industrial lighting, ${style}`
-  }
-  if (isTariff) {
-    return `Stacks of gaming consoles on a shipping dock with cargo containers and customs stamps in the background, ${style}`
-  }
-  if (isLayoff) {
-    return `An empty game development studio with dark monitors, abandoned desks, a single glowing controller left behind, ${style}`
-  }
-  if (isVR) {
-    return `A sleek white VR headset floating in dark space with glowing blue and purple data streams around it, ${style}`
-  }
-  if (isCloud) {
-    return `A gaming controller floating in dark space with glowing cloud and streaming data symbols swirling around it, wifi signals radiating, ${style}`
-  }
-  if (isGameDev) {
-    return `A dark game development workspace with multiple monitors showing 3D wireframe models, glowing code, ${style}`
-  }
-  if (isSales) {
-    return `Gaming consoles arranged as rising bar charts with glowing upward arrows, coins and currency symbols, ${style}`
-  }
-
-  // PS6 hardware — only if no competitor platform or industry topic matched
-  if (isPS6HW) {
-    return `Cinematic next-generation game console concept, sleek angular matte-black body with glowing blue accent light, ultra-polished reflective surface, dark studio environment, ${style}`
-  }
-
-  // Fallback: generic gaming tech (NOT PS6)
-  return `A futuristic gaming setup with a dark desk, glowing controller, neon ambient lighting, ${style}`
+  return `${title}. ${style}`
 }
 
 async function getImageAssetId(data, story) {
