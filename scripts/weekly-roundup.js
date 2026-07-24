@@ -127,7 +127,7 @@ Respond ONLY with valid JSON (no markdown, no code fences):
   "metaTitle": "50-60 char SEO title",
   "metaDescription": "150-160 char summary",
   "excerpt": "130-155 char summary of the week",
-  "imagePrompt": "Cinematic photorealistic PS6 concept, dark studio, dramatic blue/purple neon lighting, 4K ultra detail, no people, no text, no logos",
+  "imagePrompt": "Generate a detailed topic-specific image prompt for this week's roundup. Describe a concrete visual scene representing the week's dominant themes (e.g. a futuristic console surrounded by news icons, calendar pages, and gaming symbols). MUST include: NO TEXT, no words, no letters, no captions anywhere in the image. Cinematic photorealistic, dark background, blue/purple neon lighting, ultra-detailed 4K, no real people, no brand logos.",
   "sections": [
     { "heading": null, "paragraphs": ["intro paragraph(s)"] },
     { "heading": "Theme Heading", "paragraphs": ["paragraph mentioning story titles verbatim"] }

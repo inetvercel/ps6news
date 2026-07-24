@@ -32,7 +32,7 @@ const { applyWatermark } = require('./lib/watermark-buffer')
 // ── Terra (OpenAI) model constants ─────────────────────────────────────────────
 const TERRA_MODEL            = 'gpt-5.6-terra'
 const TERRA_REASONING_EFFORT = 'medium'
-const TERRA_IMAGE_MODEL      = 'gpt-image-1'
+const TERRA_IMAGE_MODEL      = 'gpt-image-2'
 
 // ── Known outlet URLs for auto-linking when mentioned by name ─────────────────
 const KNOWN_OUTLET_URLS = {
@@ -588,7 +588,19 @@ This applies even though you are using web search to verify facts: strip out ALL
 Links (2-4 internal, 1-3 external) are added automatically after you write — just write natural sentences that would plausibly carry a link.
 
 ━━ IMAGE PROMPT ━━
-50-80 words. Safe for work, no real people, no brand logos. Cinematic photorealistic. Gaming/technology subject matching the article topic. Dark background, dramatic blue/purple neon lighting, ultra detail.
+Generate a DETAILED, TOPIC-SPECIFIC image prompt (50-100 words) that visually represents THIS article's specific subject matter — not a generic gaming image.
+
+The image prompt MUST:
+- Describe a concrete visual scene directly tied to the article's topic (e.g. if about Switch 2 sales, describe a Switch 2 console with upward sales charts/arrows; if about memory shortages, show semiconductor wafers and RAM modules in a factory setting; if about a PSN outage, show a disconnected PlayStation controller with a broken connection icon)
+- Include the instruction: "NO TEXT, no words, no letters, no captions, no watermarks, no UI elements anywhere in the image"
+- Specify: cinematic photorealistic style, dark background, dramatic blue/purple neon lighting, ultra-detailed, 4K
+- Be safe for work: no real people, no brand logos (describe devices generically if needed, e.g. "a futuristic handheld game console" rather than naming a brand)
+- Match the PS6News visual identity: sleek, modern, tech-focused, dark aesthetic with neon accents
+
+Examples of good topic-specific prompts:
+- Switch 2 sales story → "A sleek handheld game console on a pedestal with glowing upward arrows and rising bar charts surrounding it, cinematic photorealistic, dark studio background, blue and purple neon lighting, NO TEXT, no words, no letters, ultra-detailed 4K"
+- Memory shortage story → "Rows of semiconductor wafers and RAM modules on a factory production line, some slots empty and dark, dramatic lighting, cinematic photorealistic, dark industrial setting, blue neon glow, NO TEXT, no words, no letters, ultra-detailed 4K"
+- PSN outage story → "A game controller on a dark desk with a glowing broken connection symbol above it, fractured network lines dissolving into particles, cinematic photorealistic, dark background, blue and purple neon lighting, NO TEXT, no words, no letters, ultra-detailed 4K"
 
 ━━ SOURCE MATERIAL ━━
 Headline: ${story.headline}
